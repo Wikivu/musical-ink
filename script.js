@@ -43,7 +43,7 @@ const config = {
 	DENSITY_DISSIPATION: 0.9,
 	VELOCITY_DISSIPATION: 0.9,
 	PRESSURE_DISSIPATION: 0.9,
-	PRESSURE_ITERATIONS: 25,
+	PRESSURE_ITERATIONS: 50,
 	SPLAT_RADIUS: 0.00012
 };
 
@@ -191,7 +191,7 @@ regl.frame(() => {
 		pointer.moved = false;
 	}
 	for(var i=0;i<music.length;i++){
-		createSplat(i/music.length*window.innerWidth,window.innerHeight,0,-music[i]*20,hslToRgb(i/music.length,1,0.5),(Math.min(music[i],1)+0.5)*0.00005);
+		createSplat(i/music.length*window.innerWidth,window.innerHeight,0,-Math.min(music[i],100)*20,hslToRgb(i/music.length,1,0.5),(Math.min(music[i]/200,0.5)+1)*0.00005);
 	}
 
 	advect({

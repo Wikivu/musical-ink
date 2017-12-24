@@ -14,14 +14,37 @@ const regl = Regl({
 	},
 	extensions: ['OES_texture_half_float', 'OES_texture_half_float_linear']
 });
+function hslToRgb(h, s, l){
+    var r, g, b;
 
+    if(s == 0){
+        r = g = b = l; // achromatic
+    }else{
+        var hue2rgb = function hue2rgb(p, q, t){
+            if(t < 0) t += 1;
+            if(t > 1) t -= 1;
+            if(t < 1/6) return p + (q - p) * 6 * t;
+            if(t < 1/2) return q;
+            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        }
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+    }
+
+    return [r , g,b];
+}
 const config = {
 	TEXTURE_DOWNSAMPLE: 1,
-	DENSITY_DISSIPATION: 0.98,
-	VELOCITY_DISSIPATION: 0.99,
-	PRESSURE_DISSIPATION: 0.8,
+	DENSITY_DISSIPATION: 0.8,
+	VELOCITY_DISSIPATION: 0.9,
+	PRESSURE_DISSIPATION: 0.9,
 	PRESSURE_ITERATIONS: 25,
-	SPLAT_RADIUS: 0.0012
+	SPLAT_RADIUS: 0.00012
 };
 
 let doubleFbo = (filter) => {
@@ -127,7 +150,7 @@ const splat = regl(Object.assign({
 		aspectRatio: ({ viewportWidth, viewportHeight }) => viewportWidth / viewportHeight,
 		point: regl.prop("point"),
 		color: regl.prop("color"),
-		radius: config.SPLAT_RADIUS,
+		radius: regl.prop("size"),
 		density: () => density.read
 	},
 	viewport
@@ -142,12 +165,13 @@ const jacobi = regl(Object.assign({
 	},
 	viewport
 }, fullscreenDraw));
-function createSplat(x, y, dx, dy, color) {
+function createSplat(x, y, dx, dy, color,size) {
 	splat({
 		framebuffer: velocity.write,
 		uTarget: velocity.read,
 		point: [x / window.innerWidth, 1 - y / window.innerHeight],
 		color: [dx, -dy, 1],
+		size:size
 	});
 	velocity.swap();
 
@@ -155,15 +179,19 @@ function createSplat(x, y, dx, dy, color) {
 		framebuffer: density.write,
 		uTarget: density.read,
 		point: [x / window.innerWidth, 1 - y / window.innerHeight],
-		color
+		color:color,
+		size:size
 	});
 	density.swap();
 }
 
 regl.frame(() => {
 	if (pointer.moved) {
-		createSplat(pointer.x, pointer.y, pointer.dx, pointer.dy, pointer.color);
+		createSplat(pointer.x, pointer.y, pointer.dx, pointer.dy, pointer.color,config.SPLAT_RADIUS);
 		pointer.moved = false;
+	}
+	for(var i=0;i<music.length;i++){
+		createSplat(i/music.length*window.innerWidth,window.innerHeight,0,-music[i]*20,hslToRgb(i/music.length,1,0.5),(Math.min(music[i],1)+0.5)*0.00005);
 	}
 
 	advect({

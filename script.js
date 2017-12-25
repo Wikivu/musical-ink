@@ -2,8 +2,8 @@ import Regl from 'regl';
 import vex from 'vex-js';
 
 import "vex-js/dist/css/vex.css";
-import "vex-js/dist/css/vex-theme-default.css";
-vex.defaultOptions.className = "vex-theme-default";
+import "vex-js/dist/css/vex-theme-top.css";
+vex.defaultOptions.className = "vex-theme-top";
 
 const regl = Regl({
 	attributes: {
@@ -14,30 +14,24 @@ const regl = Regl({
 	},
 	extensions: ['OES_texture_half_float', 'OES_texture_half_float_linear']
 });
-function hslToRgb(h, s, l){
-    var r, g, b;
 
-    if(s == 0){
-        r = g = b = l; // achromatic
-    }else{
-        var hue2rgb = function hue2rgb(p, q, t){
-            if(t < 0) t += 1;
-            if(t > 1) t -= 1;
-            if(t < 1/6) return p + (q - p) * 6 * t;
-            if(t < 1/2) return q;
-            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-            return p;
-        }
+function hslToRgb(h) {
+	function hue2rgb(t) {
+		if (t < 0) t += 1;
+		if (t > 1) t -= 1;
+		if (t < 1 / 6) return 6 * t;
+		if (t < 1 / 2) return 1;
+		if (t < 2 / 3) return (2 / 3 - t) * 6;
+		return 0;
+	}
 
-        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        var p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1/3);
-        g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1/3);
-    }
-
-    return [r , g,b];
+	return [
+		hue2rgb(h + 1 / 3),
+		hue2rgb(h),
+		hue2rgb(h - 1 / 3)
+	];
 }
+
 const config = {
 	TEXTURE_DOWNSAMPLE: 1,
 	DENSITY_DISSIPATION: 0.8,
@@ -47,7 +41,7 @@ const config = {
 	SPLAT_RADIUS: 0.0005
 };
 
-let doubleFbo = (filter) => {
+const doubleFbo = (filter) => {
 	let fbos = [createFbo(filter), createFbo(filter)];
 	return {
 		get read() {
@@ -62,7 +56,7 @@ let doubleFbo = (filter) => {
 	};
 };
 
-let createFbo = (filter) => {
+const createFbo = (filter) => {
 	return regl.framebuffer({
 		color: regl.texture({
 			width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
@@ -165,13 +159,13 @@ const jacobi = regl(Object.assign({
 	},
 	viewport
 }, fullscreenDraw));
-function createSplat(x, y, dx, dy, color,size) {
+function createSplat(x, y, dx, dy, color, size) {
 	splat({
 		framebuffer: velocity.write,
 		uTarget: velocity.read,
 		point: [x / window.innerWidth, 1 - y / window.innerHeight],
 		color: [dx, -dy, 1],
-		size:size
+		size: size
 	});
 	velocity.swap();
 
@@ -179,15 +173,15 @@ function createSplat(x, y, dx, dy, color,size) {
 		framebuffer: density.write,
 		uTarget: density.read,
 		point: [x / window.innerWidth, 1 - y / window.innerHeight],
-		color:color,
-		size:size
+		color: color,
+		size: size
 	});
 	density.swap();
 }
 
-regl.frame(() => {
+exports.frame = (music) => {
 	if (pointer.moved) {
-		createSplat(pointer.x, pointer.y, pointer.dx, pointer.dy, pointer.color,config.SPLAT_RADIUS);
+		createSplat(pointer.x, pointer.y, pointer.dx, pointer.dy, pointer.color, config.SPLAT_RADIUS);
 		pointer.moved = false;
 	}
 	for(var i=0;i<music.length-1;i++){
@@ -226,7 +220,8 @@ regl.frame(() => {
 	velocity.swap();
 
 	display();
-});
+};
+
 let pointer = {
 	x: 0,
 	y: 0,
@@ -255,10 +250,6 @@ vex.registerPlugin(require('vex-dialog'));
 window.dialogue = () => {
 	vex.dialog.alert({
 		unsafeMessage: `<h1>You can view the source code on <a href="http://github.com/cm-tech/musical-ink">Github</a></h1>
-
-		<h2>How to use</h2>
-		<p>Click and drag your mouse to create fluid! <br>
-		If the site is slow, try using <a href="https://www.google.com/chrome/">Google Chrome</a></p>`,
+		<p>If the site is slow, try using <a href="https://www.google.com/chrome/">Google Chrome</a></p>`,
 	});
-	document.querySelector(".vex").scrollTop = 0;
 };

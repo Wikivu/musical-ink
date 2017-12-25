@@ -22,9 +22,6 @@
             z-index: 10;
             text-align: center;
         }
-        .vex {
-            padding: 100px !important;
-        }
         .vex .vex-content {
             background-color: rgba(28, 30, 35, 0.9) !important;
             color: white !important;
@@ -40,38 +37,36 @@
             color: #4183c4;
         }
         canvas {
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    background: black;
-    margin: 0;
-    padding: 0;
-    border: 0;
-}
-#btn {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #fff;
-    font-family: monospace;
-}
-#btn:before {
-
-}
-.btn-play {
-    width: 0;
-    height: 0;
-    border-top: 8px solid transparent;
-    border-bottom: 8px solid transparent;
-    border-left: 16px solid #fff;
-}
-.btn-pause {
-    width: 8px;
-    height: 16px;
-    border-right: 4px solid #fff;
-    border-left: 4px solid #fff;
-}
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            background: black;
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+        #btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-family: monospace;
+            z-index: 1;
+        }
+        .btn-play {
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-left: 16px solid #fff;
+        }
+        .btn-pause {
+            width: 8px;
+            height: 16px;
+            border-right: 4px solid #fff;
+            border-left: 4px solid #fff;
+        }
     </style>
 </head>
 <body>
@@ -80,7 +75,6 @@
 
     <a class="info" onclick="dialogue()">&#9432;</a>
     <p id="btn">Loading...</p>
-     <script src="sound.js"></script>
     <script src="bundle.js"></script>
 </body>
 </html>

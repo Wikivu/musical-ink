@@ -1,11 +1,12 @@
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 module.exports = {
-    entry: "./script.js",
+    entry: "./sound.js",
     output: {
         path: __dirname,
         filename: "bundle.js"
     },
+    devtool: 'source-map',
     module: {
         rules: [
             { test: /\.css$/, loader: "style-loader!css-loader" },

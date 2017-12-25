@@ -1,48 +1,37 @@
-var anim;
-var playing = false;
-var music = [];
+import { frame } from "./script.js";
 
 var NUM_NODES = 64;
 
-function clearMusic() {
-    for (var i = 0; i < NUM_NODES; i++) music[i] = 0.0;
+var analyser;
+var playing = false;
+var music = new Uint8Array(NUM_NODES);
+
+function update() {
+    analyser.getByteFrequencyData(music);
+    frame(music);
+    if (playing) window.requestAnimationFrame(update);
 }
 
-clearMusic();
-
-function update(analyser) {
-    var freqArray = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(freqArray);
-
-    for (var i = 0; i < NUM_NODES; i++) music[i] = freqArray[i];
-
-    anim = window.requestAnimationFrame(update.bind(this, analyser));
-}
-
-var audioContext = new window.AudioContext() || window.webkitAudioContext();
+var audioContext = new window.AudioContext() || new window.webkitAudioContext();
 var audio = document.getElementById("audio");
 window.addEventListener("load", function() {
-
-    var analyser = audioContext.createAnalyser();
-    var source = audioContext.createMediaElementSource(audio);
-
-    source.connect(analyser);
+    analyser = audioContext.createAnalyser();
     analyser.connect(audioContext.destination);
+
+    var source = audioContext.createMediaElementSource(audio);
+    source.connect(analyser);
 
     analyser.fftSize = NUM_NODES * 2;
     analyser.smoothingTimeConstant = 0.6;
 
     var btn = document.getElementById("btn");
-
     btn.textContent = "";
 
     function toggle() {
         playing ? audio.pause() : audio.play();
-        playing ? window.cancelAnimationFrame(anim) : update(analyser);
-
         btn.className = "btn-" + (playing ? "play" : "pause");
-
         playing = !playing;
+        update();
     }
     
     window.addEventListener("keydown", function(event) {
@@ -51,7 +40,6 @@ window.addEventListener("load", function() {
     
     window.addEventListener("beforeunload", function() {
         audio.pause();
-        window.cancelAnimationFrame(anim);
         btn.className = "btn-pause";
         playing = false;
     });

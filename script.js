@@ -40,11 +40,11 @@ function hslToRgb(h, s, l){
 }
 const config = {
 	TEXTURE_DOWNSAMPLE: 1,
-	DENSITY_DISSIPATION: 0.9,
-	VELOCITY_DISSIPATION: 0.9,
+	DENSITY_DISSIPATION: 0.8,
+	VELOCITY_DISSIPATION: 0.85,
 	PRESSURE_DISSIPATION: 0.9,
 	PRESSURE_ITERATIONS: 50,
-	SPLAT_RADIUS: 0.00012
+	SPLAT_RADIUS: 0.0005
 };
 
 let doubleFbo = (filter) => {
@@ -190,8 +190,12 @@ regl.frame(() => {
 		createSplat(pointer.x, pointer.y, pointer.dx, pointer.dy, pointer.color,config.SPLAT_RADIUS);
 		pointer.moved = false;
 	}
-	for(var i=0;i<music.length;i++){
-		createSplat(i/music.length*window.innerWidth,window.innerHeight,0,-Math.min(music[i],100)*20,hslToRgb(i/music.length,1,0.5),(Math.min(music[i]/200,0.5)+1)*0.00005);
+	for(var i=0;i<music.length-1;i++){
+		createSplat(i/music.length*window.innerWidth/2+window.innerWidth/2,window.innerHeight,0,-Math.min(music[i+1],400)*30,hslToRgb(i/music.length,1,0.5),(Math.min(music[i+1]/100,2))*0.00002);
+	}
+	for(var i=1;i<music.length-1;i++){
+		createSplat(window.innerWidth/2-i/music.length*window.innerWidth/2,window.innerHeight,0,-Math.min(music[i+1],400)*30,hslToRgb(i/music.length,1,0.5),(Math.min(music[i+1]/100,2))*0.00002);
+
 	}
 
 	advect({

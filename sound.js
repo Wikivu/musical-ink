@@ -2,7 +2,7 @@ var anim;
 var playing = false;
 var music = [];
 
-var NUM_NODES = 64;
+var NUM_NODES = 32;
 
 function clearMusic() {
     for (var i = 0; i < NUM_NODES; i++) music[i] = 0.0;
@@ -44,18 +44,18 @@ window.addEventListener("load", function() {
 
         playing = !playing;
     }
-    
+
     window.addEventListener("keydown", function(event) {
         if (event.keyCode == 32) toggle();
     });
-    
+
     window.addEventListener("beforeunload", function() {
         audio.pause();
         window.cancelAnimationFrame(anim);
         btn.className = "btn-pause";
         playing = false;
     });
-    
+
     btn.addEventListener("click", toggle);
 
     toggle();

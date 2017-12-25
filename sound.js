@@ -22,7 +22,7 @@ window.addEventListener("load", function() {
     source.connect(analyser);
 
     analyser.fftSize = NUM_NODES * 2;
-    analyser.smoothingTimeConstant = 0.6;
+    analyser.smoothingTimeConstant = 0.9;
 
     var btn = document.getElementById("btn");
     btn.textContent = "";

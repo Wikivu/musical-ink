@@ -35,9 +35,9 @@ function hslToRgb(h) {
 const config = {
 	TEXTURE_DOWNSAMPLE: 1,
 	DENSITY_DISSIPATION: 0.8,
-	VELOCITY_DISSIPATION: 0.85,
+	VELOCITY_DISSIPATION: 0.8,
 	PRESSURE_DISSIPATION: 0.9,
-	PRESSURE_ITERATIONS: 50,
+	PRESSURE_ITERATIONS: 40,
 	SPLAT_RADIUS: 0.0005
 };
 
@@ -184,11 +184,14 @@ exports.frame = (music) => {
 		createSplat(pointer.x, pointer.y, pointer.dx, pointer.dy, pointer.color, config.SPLAT_RADIUS);
 		pointer.moved = false;
 	}
-	for(var i=0;i<music.length-1;i++){
-		createSplat(i/music.length*window.innerWidth/2+window.innerWidth/2,window.innerHeight,0,-Math.min(music[i+1],400)*30,hslToRgb(i/music.length,1,0.5),(Math.min(music[i+1]/100,2))*0.00002);
+	function colorF(I){
+		return hslToRgb((I+Math.sin(I*100)-I*Math.PI*100-10+new Date().getTime()/10000)%1,1,0.5);
 	}
-	for(var i=1;i<music.length-1;i++){
-		createSplat(window.innerWidth/2-i/music.length*window.innerWidth/2,window.innerHeight,0,-Math.min(music[i+1],400)*30,hslToRgb(i/music.length,1,0.5),(Math.min(music[i+1]/100,2))*0.00002);
+	for(var i=0;i<music.length-3;i++){
+		createSplat(i/music.length*window.innerWidth/2+window.innerWidth/2,window.innerHeight,0,-Math.min(music[i+1],300)*10,colorF(i/music.length),(Math.min(music[i+3]/150,2))*0.00025);
+	}
+	for(var i=1;i<music.length-3;i++){
+		createSplat(window.innerWidth/2-i/music.length*window.innerWidth/2,window.innerHeight,0,-Math.min(music[i+1],300)*10,colorF(i/music.length),(Math.min(music[i+3]/150,2))*0.00025);
 
 	}
 
@@ -249,7 +252,7 @@ window.addEventListener('mouseup', () => {
 vex.registerPlugin(require('vex-dialog'));
 window.dialogue = () => {
 	vex.dialog.alert({
-		unsafeMessage: `<h1>You can view the source code on <a href="http://github.com/cm-tech/musical-ink">Github</a></h1>
+		unsafeMessage: `<h1 style="line-spacing:140%;">You can view the source code on <a href="http://github.com/cm-tech/musical-ink">Github</a></h1>
 		<p>If the site is slow, try using <a href="https://www.google.com/chrome/">Google Chrome</a></p>`,
 	});
 };

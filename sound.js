@@ -1,10 +1,10 @@
 import { frame } from "./script.js";
 
-var NUM_NODES = 32;
+const NUM_NODES = 16;
 
-var analyser;
-var playing = false;
-var music = new Uint8Array(NUM_NODES);
+let analyser;
+let playing = false;
+let music = new Uint8Array(NUM_NODES);
 
 function update() {
     analyser.getByteFrequencyData(music);
@@ -12,33 +12,33 @@ function update() {
     if (playing) window.requestAnimationFrame(update);
 }
 
-var audioContext = new window.AudioContext() || new window.webkitAudioContext();
-var audio = document.getElementById("audio");
-window.addEventListener("load", function() {
+const audioContext = new window.AudioContext() || new window.webkitAudioContext();
+const audio = document.getElementById("audio");
+window.addEventListener("load", () => {
     analyser = audioContext.createAnalyser();
     analyser.connect(audioContext.destination);
 
-    var source = audioContext.createMediaElementSource(audio);
+    const source = audioContext.createMediaElementSource(audio);
     source.connect(analyser);
 
     analyser.fftSize = NUM_NODES * 2;
     analyser.smoothingTimeConstant = 0.9;
 
-    var btn = document.getElementById("btn");
+    const btn = document.getElementById("btn");
     btn.textContent = "";
 
     function toggle() {
         playing ? audio.pause() : audio.play();
-        btn.className = "btn-" + (playing ? "play" : "pause");
+        btn.className = `btn-${playing ? "play" : "pause"}`;
         playing = !playing;
         update();
     }
 
-    window.addEventListener("keydown", function(event) {
+    window.addEventListener("keydown", event => {
         if (event.keyCode == 32) toggle();
     });
 
-    window.addEventListener("beforeunload", function() {
+    window.addEventListener("beforeunload", () => {
         audio.pause();
         btn.className = "btn-pause";
         playing = false;

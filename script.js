@@ -16,22 +16,18 @@ const regl = Regl({
 });
 
 function hslToRgb(h) {
-	function hue2rgb(t) {
-		return Math.sin(t * 6.28) / 2 + 0.5;
-	}
-
 	return [
-		hue2rgb(h + 1 / 3),
-		hue2rgb(h),
-		hue2rgb(h - 1 / 3)
+		Math.sin(6.28 * h + 2) / 2 + 0.5,
+		Math.sin(6.28 * h + 0) / 2 + 0.5,
+		Math.sin(6.28 * h + 4) / 2 + 0.5,
 	];
 }
 
 const config = {
 	TEXTURE_DOWNSAMPLE: 1,
-	DENSITY_DISSIPATION: 0.8,
-	VELOCITY_DISSIPATION: 0.8,
-	PRESSURE_DISSIPATION: 0.9,
+	DENSITY_DISSIPATION: 0.98,
+	VELOCITY_DISSIPATION: 0.99,
+	PRESSURE_DISSIPATION: 0.8,
 	PRESSURE_ITERATIONS: 40,
 	SPLAT_RADIUS: 0.0005
 };
@@ -125,6 +121,16 @@ const gradientSubtract = regl(Object.assign({
 	},
 	viewport
 }, fullscreenDraw));
+const jacobi = regl(Object.assign({
+	frag: require("raw-loader!./shaders/jacobi.frag"),
+	framebuffer: () => pressure.write,
+	uniforms: {
+		pressure: () => pressure.read,
+		divergence: () => divergenceTex,
+		texelSize,
+	},
+	viewport
+}, fullscreenDraw));
 const display = regl(Object.assign({
 	frag: require("raw-loader!./shaders/display.frag"),
 	uniforms: {
@@ -141,16 +147,6 @@ const splat = regl(Object.assign({
 		color: regl.prop("color"),
 		radius: regl.prop("size"),
 		density: () => density.read
-	},
-	viewport
-}, fullscreenDraw));
-const jacobi = regl(Object.assign({
-	frag: require("raw-loader!./shaders/jacobi.frag"),
-	framebuffer: () => pressure.write,
-	uniforms: {
-		pressure: () => pressure.read,
-		divergence: () => divergenceTex,
-		texelSize,
 	},
 	viewport
 }, fullscreenDraw));
@@ -184,8 +180,8 @@ export function frame(music) {
 		pointer.moved = false;
 	}
 
-	for (let i = 0; i < music.length - 3; i++) {
-		createSplat((1 + i / music.length) / 2, 1, 0, -music[i + 1] * 10, colorF(i / music.length), (Math.min(music[i + 3] / 150, 2)) * 0.00025);
+	for (let i = 0; i < music.length; i++) {
+		createSplat((1 + i / music.length) / 2, 0.52, 0, -music[i]*5+100, colorF(i / music.length), 0.000125);
 	}
 
 	advect({

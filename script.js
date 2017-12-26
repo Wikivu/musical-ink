@@ -182,7 +182,7 @@ export function frame(music, average, allAve) {
 
 	for (let i = 0; i < music.length; i += 2) {
 		var speed = Math.log((music[i]) / (average[i] * 10 + allAve * 1) * 11) * 1500 | 0;
-		createSplat((1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.0025);
+		createSplat((1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length / 2), 0.0025);
 	}
 
 	advect({

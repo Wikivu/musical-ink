@@ -23,9 +23,17 @@ vec3 hsv2rgb(vec3 c)
 void main () {
 float pixelSize=1.0;
 vec2 coords2=floor(coords/texelSize/pixelSize)*texelSize*pixelSize;
+vec2 coords3=floor(coords/texelSize/pixelSize)*texelSize*pixelSize-vec2(-texelSize.x,texelSize.y);
 float w=texture2D(density, coords2).a;
 vec3 hsvT=rgb2hsv(texture2D(density, coords2).rgb);
-hsvT.y=hsvT.y/2.0+0.5;
-float posterCount=10.0;
-  gl_FragColor = vec4(floor(hsv2rgb(hsvT)*posterCount)/posterCount,w);
+vec3 hsvTE=rgb2hsv(texture2D(density, coords2).rgb);
+
+float w2=texture2D(density, coords3).a;
+vec3 hsvT2=rgb2hsv(texture2D(density, coords3).rgb);
+
+hsvT.y=0.0;//hsvT.y/2.0+0.5;
+hsvTE.z=0.5*(hsvTE.z>0.1?1.0:hsvTE.z/0.1);
+hsvT.z=acos(hsvT.z-hsvT2.z)/3.0;
+float posterCount=100.0;
+  gl_FragColor = vec4(floor((hsv2rgb(hsvT)+(hsv2rgb(hsvTE)-vec3(0.5))*1.5)*posterCount)/posterCount,w);
 }

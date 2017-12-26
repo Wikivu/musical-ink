@@ -21,13 +21,11 @@ vec3 hsv2rgb(vec3 c)
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 void main () {
-float pixelSize=5.0;
+float pixelSize=2.0;
 vec2 coords2=floor(coords/texelSize/pixelSize)*texelSize*pixelSize;
-vec2 coordsR=floor(coords/texelSize/pixelSize)*texelSize*pixelSize;
-vec2 coordsG=floor((coords)/texelSize/pixelSize)*texelSize*pixelSize;
-vec2 coordsB=floor((coords)/texelSize/pixelSize)*texelSize*pixelSize;
 float w=texture2D(density, coords2).a;
-vec3 hsvT=rgb2hsv(vec3(texture2D(density, coordsR).r,texture2D(density, coordsG).g,texture2D(density, coordsB).b));
-hsvT.y=hsvT.y;
-    gl_FragColor = vec4(hsv2rgb(hsvT),w);
+vec3 hsvT=rgb2hsv(texture2D(density, coords2).rgb);
+hsvT.y=hsvT.y/2.0+0.5;
+float posterCount=2.0;
+  gl_FragColor = vec4(floor(hsv2rgb(hsvT)*posterCount)/posterCount,w);
 }

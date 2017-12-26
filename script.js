@@ -181,8 +181,9 @@ export function frame(music,average,allAve) {
 	}
 
 	for (let i = 0; i < music.length; i++) {
+		var speed=-((music[i])/(average[i]*30+allAve*1)*31-1)*1000|0;
 		//console.log(-((music[i])/(average[i]+allAve)*2-1/2)*10,music[i]*5)
-		createSplat((1 + i / music.length) / 2, 0.52, 0, -((music[i])/(average[i]*20+allAve*1)*21-1/2)*200|0, colorF(i / music.length), 0.000125);
+		createSplat((1 + i / music.length) / 2, 0.52, 0, -Math.sign(speed)*Math.pow(Math.abs(speed),1), colorF(i / music.length), 0.000125);
 	}
 
 	advect({

@@ -21,6 +21,9 @@ function update() {
     }
     var allAve=0;
     for (let i = 0; i < music.length; i++) {
+      if(timesAveraged<100){
+        musicAve[i]=Math.max(music[i],musicAve[i]);
+      }
       musicAve[i]=music[i]*(1-mergeAmount)+musicAve[i]*mergeAmount;
       allAve+=musicAve[i]/music.length;
     }

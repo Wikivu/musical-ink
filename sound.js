@@ -8,8 +8,10 @@ let music = new Uint8Array(NUM_NODES);
 let musicTot= [];
 let musicAve=[];
 var timesAveraged=0;
+var mergeAmount=0.99;
 for (let i = 0; i < NUM_NODES; i++) {
   musicTot[i]=0;
+  musicAve[i]=0;
 }
 function update() {
     analyser.getByteFrequencyData(music);
@@ -19,7 +21,7 @@ function update() {
     }
     var allAve=0;
     for (let i = 0; i < music.length; i++) {
-      musicAve[i]=musicTot[i]/timesAveraged;
+      musicAve[i]=music[i]*(1-mergeAmount)+musicAve[i]*mergeAmount;
       allAve+=musicAve[i]/music.length;
     }
     frame(music,musicAve,allAve);
@@ -36,7 +38,7 @@ window.addEventListener("load", () => {
     source.connect(analyser);
 
     analyser.fftSize = NUM_NODES * 2;
-    analyser.smoothingTimeConstant = 0.9;
+    analyser.smoothingTimeConstant = 0.6;
 
     const btn = document.getElementById("btn");
     btn.textContent = "";

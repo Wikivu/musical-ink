@@ -25,8 +25,8 @@ function hslToRgb(h) {
 
 const config = {
 	TEXTURE_DOWNSAMPLE: 1,
-	DENSITY_DISSIPATION: 0.98,
-	VELOCITY_DISSIPATION: 0.99,
+	DENSITY_DISSIPATION: 0.9,
+	VELOCITY_DISSIPATION: 0.9,
 	PRESSURE_DISSIPATION: 0.8,
 	PRESSURE_ITERATIONS: 40,
 	SPLAT_RADIUS: 0.0005
@@ -182,7 +182,7 @@ export function frame(music,average,allAve) {
 
 	for (let i = 0; i < music.length; i++) {
 		//console.log(-((music[i])/(average[i]+allAve)*2-1/2)*10,music[i]*5)
-		createSplat((1 + i / music.length) / 2, 0.52, 0, -((music[i])/(average[i]+allAve)*2-1/2)*100|0, colorF(i / music.length), 0.000125);
+		createSplat((1 + i / music.length) / 2, 0.52, 0, -((music[i])/(average[i]*20+allAve*1)*21-1/2)*200|0, colorF(i / music.length), 0.000125);
 	}
 
 	advect({

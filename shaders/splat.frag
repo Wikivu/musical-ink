@@ -17,5 +17,8 @@ void main () {
     float splat = exp(-dot(p, p) / radius);
     float splat2 = exp(-dot(p2, p2) / radius);
     vec3 base = texture2D(uTarget, coords).xyz;
+splat = pow(max(radius*radius-pow(length(p),2.0),0.0),0.5)/ radius;
+  splat2 = pow(max(radius*radius-pow(length(p2),2.0),0.0),0.5)/ radius;
     gl_FragColor = vec4(base + min(splat + splat2, 1.0) * color, 1.0);
-}
+
+  }

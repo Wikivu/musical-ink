@@ -29,7 +29,7 @@ const config = {
 	VELOCITY_DISSIPATION: 0.9,
 	PRESSURE_DISSIPATION: 0.8,
 	PRESSURE_ITERATIONS: 40,
-	SPLAT_RADIUS: 0.0025
+	SPLAT_RADIUS: 0.025
 };
 
 const doubleFbo = (filter) => {
@@ -183,7 +183,7 @@ export function frame(music, average, allAve) {
 
 	for (let i = 0; i < music.length; i++) {
 		var speed = Math.log((music[i]) / (average[i] * 10 + allAve * 1) * 11) * 1000 | 0;
-		createSplat((1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.00025);
+		createSplat((1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.02);
 	}
 
 	advect({

@@ -165,7 +165,7 @@ function createSplat(x, y, dx, dy, color, size) {
 		uTarget: velocity.read,
 		point: [x / window.innerWidth, 1 - y / window.innerHeight],
 		color: [dx, -dy, 1],
-		size: size
+		size
 	});
 	velocity.swap();
 
@@ -173,26 +173,26 @@ function createSplat(x, y, dx, dy, color, size) {
 		framebuffer: density.write,
 		uTarget: density.read,
 		point: [x / window.innerWidth, 1 - y / window.innerHeight],
-		color: color,
-		size: size
+		color,
+		size
 	});
 	density.swap();
 }
 
-exports.frame = (music) => {
+function colorF(I) {
+	return hslToRgb((I + Math.sin(I * 100) - I * Math.PI * 100 - 10 + new Date().getTime() / 10000) % 1, 1, 0.5);
+}
+
+export function frame(music) {
 	if (pointer.moved) {
 		createSplat(pointer.x, pointer.y, pointer.dx, pointer.dy, pointer.color, config.SPLAT_RADIUS);
 		pointer.moved = false;
 	}
-	function colorF(I){
-		return hslToRgb((I+Math.sin(I*100)-I*Math.PI*100-10+new Date().getTime()/10000)%1,1,0.5);
-	}
-	for(var i=0;i<music.length-3;i++){
-		createSplat(i/music.length*window.innerWidth/2+window.innerWidth/2,window.innerHeight,0,-Math.min(music[i+1],300)*10,colorF(i/music.length),(Math.min(music[i+3]/150,2))*0.00025);
-	}
-	for(var i=1;i<music.length-3;i++){
-		createSplat(window.innerWidth/2-i/music.length*window.innerWidth/2,window.innerHeight,0,-Math.min(music[i+1],300)*10,colorF(i/music.length),(Math.min(music[i+3]/150,2))*0.00025);
 
+	createSplat(window.innerWidth / 2, window.innerHeight, 0, -music[1] * 10, colorF(0), (Math.min(music[3] / 150, 2)) * 0.00025);
+	for (let i = 1; i < music.length - 3; i++) {
+		createSplat((1 + i / music.length) * window.innerWidth / 2, window.innerHeight, 0, -music[i + 1] * 10, colorF(i / music.length), (Math.min(music[i + 3] / 150, 2)) * 0.00025);
+		createSplat((1 - i / music.length) * window.innerWidth / 2, window.innerHeight, 0, -music[i + 1] * 10, colorF(i / music.length), (Math.min(music[i + 3] / 150, 2)) * 0.00025);
 	}
 
 	advect({
@@ -223,7 +223,7 @@ exports.frame = (music) => {
 	velocity.swap();
 
 	display();
-};
+}
 
 let pointer = {
 	x: 0,

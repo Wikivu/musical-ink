@@ -14,8 +14,10 @@ void main () {
     p2.x -= 1.0;
     p.x *= aspectRatio;
     p2.x *= aspectRatio;
-    float splat = exp(-dot(p, p) / radius);
-    float splat2 = exp(-dot(p2, p2) / radius);
+    vec3 col = color;
+    col.x *= sign(col.z);
+    vec3 splat = exp(-dot(p, p) / radius) * color;
+    vec3 splat2 = exp(-dot(p2, p2) / radius) * col;
     vec3 base = texture2D(uTarget, coords).xyz;
-    gl_FragColor = vec4(base + min(splat + splat2, 1.0) * color, 1.0);
+    gl_FragColor = vec4(base + splat + splat2, 1.0);
 }

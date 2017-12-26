@@ -181,7 +181,8 @@ export function frame(music,average,allAve) {
 	}
 
 	for (let i = 0; i < music.length; i++) {
-		createSplat((1 + i / music.length) / 2, 0.52, 0, -((music[i])/(average[i]+allAve)*2-1/2)*100, colorF(i / music.length), 0.000125);
+		//console.log(-((music[i])/(average[i]+allAve)*2-1/2)*10,music[i]*5)
+		createSplat((1 + i / music.length) / 2, 0.52, 0, -((music[i])/(average[i]+allAve)*2-1/2)*100|0, colorF(i / music.length), 0.000125);
 	}
 
 	advect({

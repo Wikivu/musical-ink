@@ -21,11 +21,11 @@ vec3 hsv2rgb(vec3 c)
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 void main () {
-float pixelSize=2.0;
+float pixelSize=1.0;
 vec2 coords2=floor(coords/texelSize/pixelSize)*texelSize*pixelSize;
 float w=texture2D(density, coords2).a;
 vec3 hsvT=rgb2hsv(texture2D(density, coords2).rgb);
 hsvT.y=hsvT.y/2.0+0.5;
-float posterCount=2.0;
+float posterCount=10.0;
   gl_FragColor = vec4(floor(hsv2rgb(hsvT)*posterCount)/posterCount,w);
 }

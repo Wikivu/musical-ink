@@ -174,14 +174,14 @@ function colorF(I) {
 	return hslToRgb((new Date().getTime() / 10000 - I * 100) % 1);
 }
 
-export function frame(music) {
+export function frame(music,average,allAve) {
 	if (pointer.moved) {
 		createSplat(pointer.x / window.innerWidth, pointer.y / window.innerHeight, pointer.dx, pointer.dy, pointer.color, config.SPLAT_RADIUS);
 		pointer.moved = false;
 	}
 
 	for (let i = 0; i < music.length; i++) {
-		createSplat((1 + i / music.length) / 2, 0.52, 0, -music[i]*5+100, colorF(i / music.length), 0.000125);
+		createSplat((1 + i / music.length) / 2, 0.52, 0, -((music[i])/(average[i]+allAve)*2-1/2)*100, colorF(i / music.length), 0.000125);
 	}
 
 	advect({

@@ -5,10 +5,21 @@ const NUM_NODES = 16;
 let analyser;
 let playing = false;
 let music = new Uint8Array(NUM_NODES);
+let musicTot= new Uint8Array(NUM_NODES);
+let musicAve= new Uint8Array(NUM_NODES);
+var timesAveraged=0;
 
 function update() {
     analyser.getByteFrequencyData(music);
-    frame(music);
+    timesAveraged++;
+    for (let i = 0; i < music.length; i++) {
+      musicTot[i]+=music[i];
+    }
+    var allAve=0;
+    for (let i = 0; i < music.length; i++) {
+      allAve+=(musicAve[i]=musicTot[i]/timesAveraged)/music.length;
+    }
+    frame(music,musicAve,allAve);
     if (playing) window.requestAnimationFrame(update);
 }
 

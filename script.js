@@ -17,12 +17,7 @@ const regl = Regl({
 
 function hslToRgb(h) {
 	function hue2rgb(t) {
-		if (t < 0) t += 1;
-		if (t > 1) t -= 1;
-		if (t < 1 / 6) return 6 * t;
-		if (t < 1 / 2) return 1;
-		if (t < 2 / 3) return (2 / 3 - t) * 6;
-		return 0;
+		return Math.sin(t * 6.28) / 2 + 0.5;
 	}
 
 	return [
@@ -163,7 +158,7 @@ function createSplat(x, y, dx, dy, color, size) {
 	splat({
 		framebuffer: velocity.write,
 		uTarget: velocity.read,
-		point: [x / window.innerWidth, 1 - y / window.innerHeight],
+		point: [x, 1 - y],
 		color: [dx, -dy, 1],
 		size
 	});
@@ -172,7 +167,7 @@ function createSplat(x, y, dx, dy, color, size) {
 	splat({
 		framebuffer: density.write,
 		uTarget: density.read,
-		point: [x / window.innerWidth, 1 - y / window.innerHeight],
+		point: [x, 1 - y],
 		color,
 		size
 	});
@@ -180,19 +175,17 @@ function createSplat(x, y, dx, dy, color, size) {
 }
 
 function colorF(I) {
-	return hslToRgb((I + Math.sin(I * 100) - I * Math.PI * 100 - 10 + new Date().getTime() / 10000) % 1, 1, 0.5);
+	return hslToRgb((new Date().getTime() / 10000 - I * 100) % 1);
 }
 
 export function frame(music) {
 	if (pointer.moved) {
-		createSplat(pointer.x, pointer.y, pointer.dx, pointer.dy, pointer.color, config.SPLAT_RADIUS);
+		createSplat(pointer.x / window.innerWidth, pointer.y / window.innerHeight, pointer.dx, pointer.dy, pointer.color, config.SPLAT_RADIUS);
 		pointer.moved = false;
 	}
 
-	createSplat(window.innerWidth / 2, window.innerHeight, 0, -music[1] * 10, colorF(0), (Math.min(music[3] / 150, 2)) * 0.00025);
-	for (let i = 1; i < music.length - 3; i++) {
-		createSplat((1 + i / music.length) * window.innerWidth / 2, window.innerHeight, 0, -music[i + 1] * 10, colorF(i / music.length), (Math.min(music[i + 3] / 150, 2)) * 0.00025);
-		createSplat((1 - i / music.length) * window.innerWidth / 2, window.innerHeight, 0, -music[i + 1] * 10, colorF(i / music.length), (Math.min(music[i + 3] / 150, 2)) * 0.00025);
+	for (let i = 0; i < music.length - 3; i++) {
+		createSplat((1 + i / music.length) / 2, 1, 0, -music[i + 1] * 10, colorF(i / music.length), (Math.min(music[i + 3] / 150, 2)) * 0.00025);
 	}
 
 	advect({

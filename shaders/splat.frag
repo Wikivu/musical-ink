@@ -9,9 +9,13 @@ uniform vec2 point;
 uniform float radius;
 
 void main () {
-    vec2 p = coords - point.xy;
+    vec2 p = coords - point;
+    vec2 p2 = coords + point * vec2(1, -1);
+    p2.x -= 1.0;
     p.x *= aspectRatio;
-    vec3 splat = exp(-dot(p, p) / radius) * color;
+    p2.x *= aspectRatio;
+    float splat = exp(-dot(p, p) / radius);
+    float splat2 = exp(-dot(p2, p2) / radius);
     vec3 base = texture2D(uTarget, coords).xyz;
-    gl_FragColor = vec4(base + splat, 1.0);
+    gl_FragColor = vec4(base + min(splat + splat2, 1.0) * color, 1.0);
 }

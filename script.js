@@ -135,6 +135,7 @@ const display = regl(Object.assign({
 	frag: require("raw-loader!./shaders/display.frag"),
 	uniforms: {
 		density: () => density.read,
+		texelSize
 	}
 }, fullscreenDraw));
 const splat = regl(Object.assign({

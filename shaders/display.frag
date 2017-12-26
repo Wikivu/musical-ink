@@ -3,6 +3,7 @@ precision mediump sampler2D;
 
 varying vec2 coords;
 uniform sampler2D density;
+uniform vec2 texelSize;      // 1 / grid scale
 vec3 rgb2hsv(vec3 c)
 {
     vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
@@ -20,8 +21,13 @@ vec3 hsv2rgb(vec3 c)
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 void main () {
-float w=texture2D(density, coords).a;
-vec3 hsvT=rgb2hsv(texture2D(density, coords).rgb);
-hsvT.y=hsvT.y/2.0+0.5;
+float pixelSize=5.0;
+vec2 coords2=floor(coords/texelSize/pixelSize)*texelSize*pixelSize;
+vec2 coordsR=floor(coords/texelSize/pixelSize)*texelSize*pixelSize;
+vec2 coordsG=floor((coords)/texelSize/pixelSize)*texelSize*pixelSize;
+vec2 coordsB=floor((coords)/texelSize/pixelSize)*texelSize*pixelSize;
+float w=texture2D(density, coords2).a;
+vec3 hsvT=rgb2hsv(vec3(texture2D(density, coordsR).r,texture2D(density, coordsG).g,texture2D(density, coordsB).b));
+hsvT.y=hsvT.y;
     gl_FragColor = vec4(hsv2rgb(hsvT),w);
 }

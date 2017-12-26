@@ -5,29 +5,29 @@ const NUM_NODES = 16;
 let analyser;
 let playing = false;
 let music = new Uint8Array(NUM_NODES);
-let musicTot= [];
-let musicAve=[];
-var timesAveraged=0;
-var mergeAmount=0.99;
+let musicTot = [];
+let musicAve = [];
+var timesAveraged = 0;
+var mergeAmount = 0.99;
 for (let i = 0; i < NUM_NODES; i++) {
-  musicTot[i]=0;
-  musicAve[i]=0;
+    musicTot[i] = 0;
+    musicAve[i] = 0;
 }
 function update() {
     analyser.getByteFrequencyData(music);
     timesAveraged++;
     for (let i = 0; i < music.length; i++) {
-      musicTot[i]+=music[i];
+        musicTot[i] += music[i];
     }
-    var allAve=0;
+    var allAve = 0;
     for (let i = 0; i < music.length; i++) {
-      if(timesAveraged<100){
-        musicAve[i]=Math.max(music[i],musicAve[i]);
-      }
-      musicAve[i]=music[i]*(1-mergeAmount)+musicAve[i]*mergeAmount;
-      allAve+=musicAve[i]/music.length;
+        if (timesAveraged < 100) {
+            musicAve[i] = Math.max(music[i], musicAve[i]);
+        }
+        musicAve[i] = music[i] * (1 - mergeAmount) + musicAve[i] * mergeAmount;
+        allAve += musicAve[i] / music.length;
     }
-    frame(music,musicAve,allAve);
+    frame(music, musicAve, allAve);
     if (playing) window.requestAnimationFrame(update);
 }
 

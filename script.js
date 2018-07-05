@@ -5,7 +5,7 @@ import "vex-js/dist/css/vex.css";
 import "vex-js/dist/css/vex-theme-top.css";
 vex.defaultOptions.className = "vex-theme-top";
 
-const regl = Regl({
+var regl = Regl({
   attributes: {
     alpha: false,
     depth: false,
@@ -23,7 +23,7 @@ function hslToRgb(h) {
   ];
 }
 
-const config = {
+var config = {
   TEXTURE_DOWNSAMPLE: 0,
   DENSITY_DISSIPATION: 0.9,
   VELOCITY_DISSIPATION: 0.9,
@@ -32,7 +32,7 @@ const config = {
   SPLAT_RADIUS: 0.025
 };
 
-const doubleFbo = (filter) => {
+var doubleFbo = (filter) => {
   let fbos = [createFbo(filter), createFbo(filter)];
   return {
     get read() {
@@ -47,7 +47,7 @@ const doubleFbo = (filter) => {
   };
 };
 
-const createFbo = (filter) => {
+var createFbo = (filter) => {
   return regl.framebuffer({
     color: regl.texture({
       width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
@@ -61,12 +61,12 @@ const createFbo = (filter) => {
   });
 };
 
-const velocity = doubleFbo('linear');
-const density = doubleFbo('linear');
-const pressure = doubleFbo('nearest');
-const divergenceTex = createFbo('nearest');
+window.velocity = doubleFbo('linear');
+window.density = doubleFbo('linear');
+window.pressure = doubleFbo('nearest');
+window.divergenceTex = createFbo('nearest');
 
-const fullscreenDraw = {
+var fullscreenDraw = {
   vert: require("raw-loader!./shaders/project.vert"),
   attributes: {
     points: [
@@ -87,17 +87,17 @@ const fullscreenDraw = {
   count: 6
 };
 
-const texelSize = ({viewportWidth, viewportHeight}) => [
+window.texelSize = ({viewportWidth, viewportHeight}) => [
   1 / viewportWidth,
   1 / viewportHeight
 ];
-const viewport = {
+window.viewport = {
   x: 0,
   y: 0,
   width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
   height: window.innerHeight >> config.TEXTURE_DOWNSAMPLE
 };
-const advect = regl(Object.assign({
+window.advect = regl(Object.assign({
   frag: require("raw-loader!./shaders/advect.frag"),
   framebuffer: regl.prop("framebuffer"),
   uniforms: {
@@ -109,7 +109,7 @@ const advect = regl(Object.assign({
   },
   viewport
 }, fullscreenDraw));
-const divergence = regl(Object.assign({
+window.divergence = regl(Object.assign({
   frag: require("raw-loader!./shaders/divergence.frag"),
   framebuffer: divergenceTex,
   uniforms: {
@@ -118,7 +118,7 @@ const divergence = regl(Object.assign({
   },
   viewport
 }, fullscreenDraw));
-const clear = regl(Object.assign({
+window.clear = regl(Object.assign({
   frag: require("raw-loader!./shaders/clear.frag"),
   framebuffer: () => pressure.write,
   uniforms: {
@@ -127,7 +127,7 @@ const clear = regl(Object.assign({
   },
   viewport
 }, fullscreenDraw));
-const gradientSubtract = regl(Object.assign({
+window.gradientSubtract = regl(Object.assign({
   frag: require("raw-loader!./shaders/gradientSubtract.frag"),
   framebuffer: () => velocity.write,
   uniforms: {
@@ -137,7 +137,7 @@ const gradientSubtract = regl(Object.assign({
   },
   viewport
 }, fullscreenDraw));
-const jacobi = regl(Object.assign({
+window.jacobi = regl(Object.assign({
   frag: require("raw-loader!./shaders/jacobi.frag"),
   framebuffer: () => pressure.write,
   uniforms: {
@@ -147,14 +147,14 @@ const jacobi = regl(Object.assign({
   },
   viewport
 }, fullscreenDraw));
-const display = regl(Object.assign({
+window.display = regl(Object.assign({
   frag: require("raw-loader!./shaders/display.frag"),
   uniforms: {
     density: () => density.read,
     texelSize
   }
 }, fullscreenDraw));
-const splat = regl(Object.assign({
+window.splat = regl(Object.assign({
   frag: require("raw-loader!./shaders/splat.frag"),
   framebuffer: regl.prop("framebuffer"),
   uniforms: {
@@ -204,11 +204,26 @@ export function frame(music, average, allAve) {
     //pointer.moved = false;
   }
 
-  for (let i = 0; i < music.length; i++) {
+  /*for (let i = 0; i < music.length; i++) {
     var speed = Math.log((music[i]) / (average[i] * 20 + allAve * 1) * 21) * 3000 | 0;
     createSplat((1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.5/music.length);
     createSplat(1 - (1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.5/music.length);
-  }
+  }*/
+	var anglem=1/Math.PI;
+	for (let i = 0; i < music.length; i++) {
+		var loc={x:Math.sin((i+0.5) / music.length*Math.PI)*anglem,y:-Math.cos((i+0.5) / music.length*Math.PI)*anglem};
+    var speed = Math.log((music[i]) / (average[i] * 20 + allAve * 1) * 21) * 3000 | 0;
+    createSplat(loc.x*Math.min(viewport.height,viewport.width)/viewport.width+0.5,loc.y*Math.min(viewport.height,viewport.width)/viewport.height+0.5, 1/anglem*loc.x*Math.sign(speed) * Math.pow(Math.abs(speed), 1), 1/anglem*loc.y*Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.5/music.length);
+    //createSplat(1 - (1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.5/music.length);
+
+	}
+  for (let i = 0; i < music.length; i++) {
+		var loc={x:-Math.sin((i+0.5) / music.length*Math.PI)*anglem,y:-Math.cos((i+0.5) / music.length*Math.PI)*anglem};
+    var speed = Math.log((music[i]) / (average[i] * 20 + allAve * 1) * 21) * 3000 | 0;
+    createSplat(loc.x*Math.min(viewport.height,viewport.width)/viewport.width+0.5,loc.y*Math.min(viewport.height,viewport.width)/viewport.height+0.5, 1/anglem*loc.x*Math.sign(speed) * Math.pow(Math.abs(speed), 1), 1/anglem*loc.y*Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.5/music.length);
+    //createSplat(1 - (1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.5/music.length);
+
+	}
 
   advect({framebuffer: velocity.write, x: velocity.read, dissipation: config.VELOCITY_DISSIPATION});
   velocity.swap();
@@ -268,3 +283,90 @@ window.dialogue = () => {
   vex.dialog.alert({unsafeMessage: `<h1 style="line-spacing:140%;">You can view the source code on <a href="http://github.com/cm-tech/musical-ink">Github</a></h1>
 		<p>If the site is slow, try using <a href="https://www.google.com/chrome/">Google Chrome</a></p>`});
 };
+window.addEventListener("resize",function(){
+  return null;
+  window.velocity = doubleFbo('linear');
+  window.density = doubleFbo('linear');
+  window.pressure = doubleFbo('nearest');
+  window.divergenceTex = createFbo('nearest');
+  window.texelSize = ({viewportWidth, viewportHeight}) => [
+    1 / viewportWidth,
+    1 / viewportHeight
+  ];
+  window.viewport = {
+    x: 0,
+    y: 0,
+    width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
+    height: window.innerHeight >> config.TEXTURE_DOWNSAMPLE
+  };
+  window.advect = regl(Object.assign({
+    frag: require("raw-loader!./shaders/advect.frag"),
+    framebuffer: regl.prop("framebuffer"),
+    uniforms: {
+      timestep: 0.017,
+      dissipation: regl.prop("dissipation"),
+      x: regl.prop("x"),
+      velocity: () => velocity.read,
+      texelSize
+    },
+    viewport
+  }, fullscreenDraw));
+  window.divergence = regl(Object.assign({
+    frag: require("raw-loader!./shaders/divergence.frag"),
+    framebuffer: divergenceTex,
+    uniforms: {
+      velocity: () => velocity.read,
+      texelSize
+    },
+    viewport
+  }, fullscreenDraw));
+  window.clear = regl(Object.assign({
+    frag: require("raw-loader!./shaders/clear.frag"),
+    framebuffer: () => pressure.write,
+    uniforms: {
+      pressure: () => pressure.read,
+      dissipation: config.PRESSURE_DISSIPATION
+    },
+    viewport
+  }, fullscreenDraw));
+  window.gradientSubtract = regl(Object.assign({
+    frag: require("raw-loader!./shaders/gradientSubtract.frag"),
+    framebuffer: () => velocity.write,
+    uniforms: {
+      pressure: () => pressure.read,
+      velocity: () => velocity.read,
+      texelSize
+    },
+    viewport
+  }, fullscreenDraw));
+  window.jacobi = regl(Object.assign({
+    frag: require("raw-loader!./shaders/jacobi.frag"),
+    framebuffer: () => pressure.write,
+    uniforms: {
+      pressure: () => pressure.read,
+      divergence: () => divergenceTex,
+      texelSize
+    },
+    viewport
+  }, fullscreenDraw));
+  window.display = regl(Object.assign({
+    frag: require("raw-loader!./shaders/display.frag"),
+    uniforms: {
+      density: () => density.read,
+      texelSize
+    }
+  }, fullscreenDraw));
+  window.splat = regl(Object.assign({
+    frag: require("raw-loader!./shaders/splat.frag"),
+    framebuffer: regl.prop("framebuffer"),
+    uniforms: {
+      uTarget: regl.prop("uTarget"),
+      aspectRatio: ({viewportWidth, viewportHeight}) => viewportWidth / viewportHeight,
+      point: regl.prop("point"),
+      color: regl.prop("color"),
+      radius: regl.prop("size"),
+      density: () => density.read
+    },
+    viewport
+  }, fullscreenDraw));
+});

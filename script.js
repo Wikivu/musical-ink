@@ -176,14 +176,15 @@ function colorF(I) {
 }
 
 export function frame(music, average, allAve) {
-	if (pointer.moved) {
+	if (pointer.down) {
 		createSplat(pointer.x / window.innerWidth, pointer.y / window.innerHeight, pointer.dx, pointer.dy, pointer.color, config.SPLAT_RADIUS);
-		pointer.moved = false;
+		//pointer.moved = false;
 	}
 
 	for (let i = 0; i < music.length; i++) {
 		var speed = Math.log((music[i]) / (average[i] * 20 + allAve * 1) * 21) * 3000 | 0;
 		createSplat((1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.02);
+		createSplat(1-(1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.02);
 	}
 
 	advect({
@@ -227,13 +228,16 @@ let pointer = {
 };
 document.addEventListener("mousemove", (e) => {
 	pointer.moved = pointer.down;
-	pointer.dx = (e.clientX - pointer.x) * 10;
-	pointer.dy = (e.clientY - pointer.y) * 10;
+	var l=0.9;
+	pointer.dx = pointer.dx*l+(e.clientX - pointer.x) * 1000*(1-l);
+	pointer.dy = pointer.dy*l+(e.clientY - pointer.y) * 1000*(1-l);
 	pointer.x = e.clientX;
 	pointer.y = e.clientY;
 });
 document.addEventListener('mousedown', () => {
 	pointer.down = true;
+	pointer.dx = 0;
+	pointer.dy = 0;
 	pointer.color = [Math.random() + 0.2, Math.random() + 0.2, Math.random() + 0.2];
 });
 window.addEventListener('mouseup', () => {

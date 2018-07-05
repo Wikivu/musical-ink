@@ -20,6 +20,6 @@ void main () {
     vec3 base = texture2D(uTarget, coords).xyz;
 splat = pow(max(radius*radius-pow(length(p),2.0),0.0),0.5)/ radiusW;
   splat2 = pow(max(radius*radius-pow(length(p2),2.0),0.0),0.5)/ radiusW;
-    gl_FragColor = vec4(base + min(splat + splat2, 1.0) * color, 1.0);
+    gl_FragColor = vec4(base + min(splat, 1.0) * color, 1.0);
 
   }

@@ -66,4 +66,5 @@ window.addEventListener("load", () => {
     btn.addEventListener("click", toggle);
 
     toggle();
+    toggle();
 });

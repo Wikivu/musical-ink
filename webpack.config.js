@@ -1,26 +1,23 @@
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
-
 module.exports = {
-    entry: "./sound.js",
+    entry: "./js/sound.js",
     output: {
         path: __dirname,
         filename: "bundle.js"
     },
-    devtool: 'source-map',
     module: {
         rules: [
             { test: /\.css$/, loader: "style-loader!css-loader" },
+            { test: /\.(vert|frag)$/, use: "raw-loader" },
             {
                 test: /\.js$/,
-                exclude: /(node_modules|bower_components)/,
+                exclude: /node_modules/,
                 use: {
-                    loader: 'babel-loader',
+                    loader: "babel-loader",
                     options: { 
-                        presets: [ '@babel/preset-env' ] 
+                        presets: [ "@babel/preset-env" ] 
                     } 
                 }
             }
         ]
-    },
-    plugins: [ new UglifyJsPlugin() ]
+    }
 };

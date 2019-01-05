@@ -65,5 +65,6 @@ window.addEventListener("load", () => {
 
     btn.addEventListener("click", toggle);
 
-    toggle();
+    btn.className = `btn-${playing ? "pause" : "play"}`;
+    update();
 });

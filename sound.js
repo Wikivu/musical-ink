@@ -1,4 +1,4 @@
-import { frame } from "./script.js";
+import { frame,resize } from "./script.js";
 
 const NUM_NODES = 32;
 
@@ -32,6 +32,7 @@ function update() {
     if (playing)
         window.requestAnimationFrame(update);
 }
+window.addEventListener("resize",resize);
 var audioContext = false;
 var audio = document.getElementById("audio");
 

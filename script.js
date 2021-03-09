@@ -1,5 +1,6 @@
 import Regl from "regl";
 import vex from "vex-js";
+import * as dat from "dat.gui";
 
 import "vex-js/dist/css/vex.css";
 import "vex-js/dist/css/vex-theme-top.css";
@@ -13,6 +14,7 @@ var config = {
   PRESSURE_ITERATIONS: 40,
   SPLAT_RADIUS: 0.025,
 };
+
 var regl = Regl({
   attributes: {
     alpha: false,
@@ -20,10 +22,12 @@ var regl = Regl({
     stencil: false,
     antialias: false,
   },
-  pixelRatio: 1,// << config.TEXTURE_DOWNSAMPLE,
+  pixelRatio: 1, // << config.TEXTURE_DOWNSAMPLE,
   extensions: ["OES_texture_half_float", "OES_texture_half_float_linear"],
 });
 
+const gui = new dat.GUI();
+gui.add(config, "SPLAT_RADIUS", 0.01, 0.1).name("splat radius");
 function hslToRgb(h) {
   return [
     Math.sin(6.28 * h + 2) / 2 + 0.5,
@@ -202,7 +206,12 @@ window.display = regl(
         density: () => density.read,
         texelSize,
       },
-      viewport: ()=>({x:0,y:0,width:window.innerWidth,height:window.innerHeight}),
+      viewport: () => ({
+        x: 0,
+        y: 0,
+        width: window.innerWidth,
+        height: window.innerHeight,
+      }),
     },
     fullscreenDraw
   )

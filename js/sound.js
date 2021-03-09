@@ -37,23 +37,24 @@ window.addEventListener("load", () => {
     analyser = audioContext.createAnalyser();
     analyser.connect(audioContext.destination);
 
-    const source = audioContext.createMediaElementSource(audio);
-    source.connect(analyser);
-
     analyser.fftSize = NUM_NODES * 2;
     analyser.smoothingTimeConstant = 0.6;
+
+    const source = audioContext.createMediaElementSource(audio);
+    source.connect(analyser);
 
     const btn = document.getElementById("btn");
     btn.textContent = "";
 
     function toggle() {
+        audioContext.resume();
         playing ? audio.pause() : audio.play();
         btn.className = `btn-${playing ? "play" : "pause"}`;
         playing = !playing;
         update();
     }
 
-    window.addEventListener("keydown", event => {
+    window.addEventListener("keydown", (event) => {
         if (event.keyCode == 32) toggle();
     });
 

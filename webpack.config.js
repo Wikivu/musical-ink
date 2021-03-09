@@ -1,26 +1,25 @@
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const CopyPlugin = require("copy-webpack-plugin");
+const path = require("path");
 
 module.exports = {
-    entry: "./sound.js",
-    output: {
-        path: __dirname,
-        filename: "bundle.js"
-    },
-    devtool: 'source-map',
-    module: {
-        rules: [
-            { test: /\.css$/, loader: "style-loader!css-loader" },
-            {
-                test: /\.js$/,
-                exclude: /(node_modules|bower_components)/,
-                use: {
-                    loader: 'babel-loader',
-                    options: { 
-                        presets: [ '@babel/preset-env' ] 
-                    } 
-                }
-            }
-        ]
-    },
-    plugins: [ new UglifyJsPlugin() ]
+  entry: "./src/sound.js",
+  output: {
+    path: path.join(__dirname, "dist"),
+    filename: "bundle.js",
+  },
+  devtool: "source-map",
+  module: {
+    rules: [
+      { test: /\.css$/, use: ["style-loader", "css-loader"] },
+      { test: /\.(vert|frag)$/, use: "raw-loader" },
+    ],
+  },
+  plugins: [
+    new CopyPlugin({
+      patterns: [{ from: "public", to: "dist" }],
+    }),
+  ],
+  devServer: {
+    contentBase: path.join(__dirname, "public"),
+  },
 };

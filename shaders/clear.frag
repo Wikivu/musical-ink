@@ -6,5 +6,5 @@ uniform sampler2D pressure;
 uniform float dissipation;
 
 void main() {
-    gl_FragColor = dissipation * texture2D(pressure, coords);
+  gl_FragColor = dissipation * texture2D(pressure, coords);
 }

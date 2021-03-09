@@ -25,9 +25,12 @@ var regl = Regl({
   pixelRatio: 1, // << config.TEXTURE_DOWNSAMPLE,
   extensions: ["OES_texture_half_float", "OES_texture_half_float_linear"],
 });
-
+let downSamplelis=[];
 const gui = new dat.GUI();
 gui.add(config, "SPLAT_RADIUS", 0.01, 0.1).name("splat radius");
+gui.add(config, "TEXTURE_DOWNSAMPLE", 0, 10,1).name("downsample").onFinishChange(()=>{
+  downSamplelis.forEach(x=>x());
+});
 function hslToRgb(h) {
   return [
     Math.sin(6.28 * h + 2) / 2 + 0.5,
@@ -66,7 +69,7 @@ var createFbo = (filter) => {
     width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
     height: window.innerHeight >> config.TEXTURE_DOWNSAMPLE,
   });
-  window.addEventListener("resize", () => {
+  const updateSizes=() => {
     // tx.resize(window.innerWidth >> config.TEXTURE_DOWNSAMPLE,window.innerHeight >> config.TEXTURE_DOWNSAMPLE)
     tx = tx({
       width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
@@ -92,14 +95,17 @@ var createFbo = (filter) => {
 
     // })
     // fbg(window.innerWidth >> config.TEXTURE_DOWNSAMPLE,window.innerHeight >> config.TEXTURE_DOWNSAMPLE)
-  });
+  }
+  window.addEventListener("resize", updateSizes);
+  downSamplelis.push(updateSizes)
+
   return () => fbg;
 };
 
 window.velocity = doubleFbo("linear");
 window.density = doubleFbo("linear");
-window.pressure = doubleFbo("nearest");
-window.divergenceTex = createFbo("nearest");
+window.pressure = doubleFbo("linear");//nearest
+window.divergenceTex = createFbo("linear");//nearest
 
 var fullscreenDraw = {
   vert: require("raw-loader!./shaders/project.vert"),

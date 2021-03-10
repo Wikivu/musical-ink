@@ -24,7 +24,7 @@ void main() {
   float splat = length(p);
 
   splat = pow(max(radius*radius-pow(length(p), 2.0),0.0),0.5)*40.0;
-  splat=exp(-pow(length(p), 2.0)/radius/radius*4.0)*radius*40.0;
+  splat=exp(-pow(length(p), 2.0)/radius/radius*2.0)*radius*40.0;
 
   float interp=min(splat, 100.0);
   vec3 baseD = texture2D(density, coords).xyz;

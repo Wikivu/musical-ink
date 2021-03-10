@@ -73,31 +73,14 @@ var createFbo = (filter) => {
     height: window.innerHeight >> config.TEXTURE_DOWNSAMPLE,
   });
   const updateSizes = () => {
-    // tx.resize(window.innerWidth >> config.TEXTURE_DOWNSAMPLE,window.innerHeight >> config.TEXTURE_DOWNSAMPLE)
-    tx = tx({
-      width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
-      height: window.innerHeight >> config.TEXTURE_DOWNSAMPLE,
-      wrap: "clamp",
-      min: filter,
-      mag: filter,
-      type: "half float",
-    });
-    fbg = fbg({
-      color: tx,
-      depthStencil: false,
-      width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
-      height: window.innerHeight >> config.TEXTURE_DOWNSAMPLE,
-    });
-    // tx({
-    //   width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
-    //   height: window.innerHeight >> config.TEXTURE_DOWNSAMPLE,
-    //   wrap: "clamp",
-    //   min: filter,
-    //   mag: filter,
-    //   type: "half float",
-
-    // })
-    // fbg(window.innerWidth >> config.TEXTURE_DOWNSAMPLE,window.innerHeight >> config.TEXTURE_DOWNSAMPLE)
+    tx = tx.resize(
+      window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
+      window.innerHeight >> config.TEXTURE_DOWNSAMPLE
+    );
+    fbg = fbg.resize(
+      window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
+      window.innerHeight >> config.TEXTURE_DOWNSAMPLE
+    );
   };
   window.addEventListener("resize", updateSizes);
   downSamplelis.push(updateSizes);
@@ -108,7 +91,7 @@ var createFbo = (filter) => {
 window.velocity = doubleFbo("linear");
 window.density = doubleFbo("linear");
 window.pressure = doubleFbo("linear"); //nearest
-window.divergenceTex = createFbo("linear"); //nearest
+const divergenceTex = createFbo("linear"); //nearest
 import projectVERT from "../shaders/project.js";
 
 import advectFRAG from "../shaders/advect.js";
@@ -142,7 +125,7 @@ window.viewportg = () => ({
   width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
   height: window.innerHeight >> config.TEXTURE_DOWNSAMPLE,
 });
-window.advect = regl(
+const advect = regl(
   Object.assign(
     {
       frag: advectFRAG,
@@ -154,12 +137,11 @@ window.advect = regl(
         velocity: () => velocity.read,
         texelSize,
       },
-      viewport: viewportg,
     },
     fullscreenDraw
   )
 );
-window.divergence = regl(
+const divergence = regl(
   Object.assign(
     {
       frag: divergenceFRAG,
@@ -168,12 +150,11 @@ window.divergence = regl(
         velocity: () => velocity.read,
         texelSize,
       },
-      viewport: viewportg,
     },
     fullscreenDraw
   )
 );
-window.clear = regl(
+const clear = regl(
   Object.assign(
     {
       frag: clearFRAG,
@@ -182,12 +163,11 @@ window.clear = regl(
         pressure: () => pressure.read,
         dissipation: config.PRESSURE_DISSIPATION,
       },
-      viewport: viewportg,
     },
     fullscreenDraw
   )
 );
-window.gradientSubtract = regl(
+const gradientSubtract = regl(
   Object.assign(
     {
       frag: gradientSubtractFRAG,
@@ -197,12 +177,11 @@ window.gradientSubtract = regl(
         velocity: () => velocity.read,
         texelSize,
       },
-      viewport: viewportg,
     },
     fullscreenDraw
   )
 );
-window.jacobi = regl(
+const jacobi = regl(
   Object.assign(
     {
       frag: jacobiFRAG,
@@ -212,12 +191,11 @@ window.jacobi = regl(
         divergence: () => divergenceTex(),
         texelSize,
       },
-      viewport: viewportg,
     },
     fullscreenDraw
   )
 );
-window.display = regl(
+const display = regl(
   Object.assign(
     {
       frag: displayFRAG,
@@ -235,7 +213,7 @@ window.display = regl(
     fullscreenDraw
   )
 );
-window.splat = regl(
+const splat = regl(
   Object.assign(
     {
       frag: splatFRAG,
@@ -249,13 +227,12 @@ window.splat = regl(
         radius: regl.prop("size"),
         density: () => density.read,
       },
-      viewport: viewportg,
     },
     fullscreenDraw
   )
 );
-window.createSplat = function createSplat(x, y, dx, dy, color, size) {
-  window.splat({
+function createSplat(x, y, dx, dy, color, size) {
+  splat({
     framebuffer: velocity.write,
     uTarget: velocity.read,
     point: [x, 1 - y],
@@ -264,7 +241,7 @@ window.createSplat = function createSplat(x, y, dx, dy, color, size) {
   });
   velocity.swap();
 
-  window.splat({
+  splat({
     framebuffer: density.write,
     uTarget: density.read,
     point: [x, 1 - y],
@@ -272,7 +249,7 @@ window.createSplat = function createSplat(x, y, dx, dy, color, size) {
     size,
   });
   density.swap();
-};
+}
 
 function colorF(I) {
   return hslToRgb((new Date().getTime() / 10000 - I * 100) % 1);
@@ -286,7 +263,7 @@ export function frame(music, average, allAve) {
     height: window.innerHeight >> config.TEXTURE_DOWNSAMPLE,
   };
   if (pointer.down) {
-    window.createSplat(
+    createSplat(
       pointer.x / window.innerWidth,
       pointer.y / window.innerHeight,
       pointer.dx,
@@ -407,15 +384,3 @@ window.dialogue = () => {
 		<p>If the site is slow, try using <a href="https://www.google.com/chrome/">Google Chrome</a></p>`,
   });
 };
-export function resize() {
-  display();
-  // window.viewport = {
-  //   x: 0,
-  //   y: 0,
-  //   width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
-  //   height: window.innerHeight >> config.TEXTURE_DOWNSAMPLE,
-  // };
-
-  // console.log("RES");
-  return null;
-}

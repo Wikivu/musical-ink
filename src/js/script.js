@@ -13,6 +13,11 @@ var config = {
   PRESSURE_DISSIPATION: 0.8,
   PRESSURE_ITERATIONS: 40,
   SPLAT_RADIUS: 0.025,
+  showStationary: true,
+  displayShader: 1,
+  loadFile: function () {
+    document.getElementById("upload").click();
+  },
 };
 
 var regl = Regl({
@@ -34,6 +39,9 @@ gui
   .onFinishChange(() => {
     downSamplelis.forEach((x) => x());
   });
+gui.add(config, "displayShader", { paint: 0, rorschach: 1}).name("style");
+gui.add(config, "showStationary").name("show stationary");
+gui.add(config, "loadFile").name("upload mp3");
 function hslToRgb(h) {
   return [
     Math.sin(6.28 * h + 2) / 2 + 0.5,
@@ -99,9 +107,11 @@ import advectFRAG from "../shaders/advect.frag";
 import clearFRAG from "../shaders/clear.frag";
 
 import displayFRAG from "../shaders/display.frag";
+import display1FRAG from "../shaders/display1.frag";
 import gradientSubtractFRAG from "../shaders/gradientSubtract.frag";
 import divergenceFRAG from "../shaders/divergence.frag";
-import splatFRAG from "../shaders/splat.frag";
+import splatDFRAG from "../shaders/splatD.frag";
+import splatVFRAG from "../shaders/splatV.frag";
 import jacobiFRAG from "../shaders/jacobi.frag";
 var fullscreenDraw = {
   vert: projectVERT,
@@ -185,7 +195,7 @@ const jacobi = regl(
     fullscreenDraw
   )
 );
-const display = regl(
+const display0 = regl(
   Object.assign(
     {
       frag: displayFRAG,
@@ -203,41 +213,102 @@ const display = regl(
     fullscreenDraw
   )
 );
-const splat = regl(
+const display1 = regl(
   Object.assign(
     {
-      frag: splatFRAG,
+      frag: display1FRAG,
+      uniforms: {
+        density: () => density.read,
+        texelSize,
+      },
+      viewport: () => ({
+        x: 0,
+        y: 0,
+        width: window.innerWidth,
+        height: window.innerHeight,
+      }),
+    },
+    fullscreenDraw
+  )
+);
+const display = () => [display0, display1][config.displayShader]();
+// const splat = regl(
+//   Object.assign(
+//     {
+//       frag: splatFRAG,
+//       framebuffer: regl.prop("framebuffer"),
+//       uniforms: {
+//         uTarget: regl.prop("uTarget"),
+//         aspectRatio: ({ viewportWidth, viewportHeight }) =>
+//           viewportWidth / viewportHeight,
+//         point: regl.prop("point"),
+//         color: regl.prop("color"),
+//         radius: regl.prop("size"),
+//         density: () => density.read,
+//       },
+//     },
+//     fullscreenDraw
+//   )
+// );
+const splatV = regl(
+  Object.assign(
+    {
+      frag: splatVFRAG,
       framebuffer: regl.prop("framebuffer"),
       uniforms: {
-        uTarget: regl.prop("uTarget"),
+        velocity: regl.prop("velocity"),
+        density: regl.prop("density"),
         aspectRatio: ({ viewportWidth, viewportHeight }) =>
           viewportWidth / viewportHeight,
         point: regl.prop("point"),
-        color: regl.prop("color"),
+        inkColor: regl.prop("inkColor"),
+        inkVelocity: regl.prop("inkVelocity"),
         radius: regl.prop("size"),
-        density: () => density.read,
+      },
+    },
+    fullscreenDraw
+  )
+);
+const splatD = regl(
+  Object.assign(
+    {
+      frag: splatDFRAG,
+      framebuffer: regl.prop("framebuffer"),
+      uniforms: {
+        velocity: regl.prop("velocity"),
+        density: regl.prop("density"),
+        aspectRatio: ({ viewportWidth, viewportHeight }) =>
+          viewportWidth / viewportHeight,
+        point: regl.prop("point"),
+        inkColor: regl.prop("inkColor"),
+        inkVelocity: regl.prop("inkVelocity"),
+        radius: regl.prop("size"),
       },
     },
     fullscreenDraw
   )
 );
 function createSplat(x, y, dx, dy, color, size) {
-  splat({
+  splatV({
     framebuffer: velocity.write,
-    uTarget: velocity.read,
+    velocity: velocity.read,
+    density: density.read,
     point: [x, 1 - y],
-    color: [dx, -dy, 1],
+    inkVelocity: [dx, -dy, 1],
+    inkColor:color,
+    size,
+  });
+
+  splatD({
+    framebuffer: density.write,
+    velocity: velocity.read,
+    density: density.read,
+    point: [x, 1 - y],
+    inkVelocity: [dx, -dy, 1],
+    inkColor:color,
     size,
   });
   velocity.swap();
-
-  splat({
-    framebuffer: density.write,
-    uTarget: density.read,
-    point: [x, 1 - y],
-    color,
-    size,
-  });
   density.swap();
 }
 
@@ -270,7 +341,8 @@ export function frame(music, average, allAve) {
     createSplat(1 - (1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.5/music.length);
   }*/
   var anglem = 1 / Math.PI;
-  let ringRadius = Math.min(viewport.height, viewport.width);
+  let ringRadius = Math.min(viewport.height, viewport.width) / 2;
+  let RR = 1;
   for (let i = 0; i < music.length; i++) {
     var loc = {
       x: Math.sin(((i + 0.5) / music.length) * Math.PI) * anglem,
@@ -278,14 +350,15 @@ export function frame(music, average, allAve) {
     };
     var speed =
       (Math.log((music[i] / (average[i] * 20 + allAve * 1)) * 21) * 3000) | 0;
-    createSplat(
-      (loc.x * ringRadius) / viewport.width + 0.5,
-      (loc.y * ringRadius) / viewport.height + 0.5,
-      (1 / anglem) * loc.x * Math.sign(speed) * Math.pow(Math.abs(speed), 1),
-      (1 / anglem) * loc.y * Math.sign(speed) * Math.pow(Math.abs(speed), 1),
-      colorF(i / music.length),
-      0.5 / music.length
-    );
+    if (speed !== 0 || config.showStationary)
+      createSplat(
+        (loc.x * ringRadius) / viewport.width + 0.5,
+        (loc.y * ringRadius) / viewport.height + 0.5,
+        (1 / anglem) * loc.x * Math.sign(speed) * Math.pow(Math.abs(speed), 1),
+        (1 / anglem) * loc.y * Math.sign(speed) * Math.pow(Math.abs(speed), 1),
+        colorF(i / music.length),
+        (0.5 / music.length) * RR
+      );
     //createSplat(1 - (1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.5/music.length);
   }
   for (let i = 0; i < music.length; i++) {
@@ -295,14 +368,15 @@ export function frame(music, average, allAve) {
     };
     var speed =
       (Math.log((music[i] / (average[i] * 20 + allAve * 1)) * 21) * 3000) | 0;
-    createSplat(
-      (loc.x * ringRadius) / viewport.width + 0.5,
-      (loc.y * ringRadius) / viewport.height + 0.5,
-      (1 / anglem) * loc.x * Math.sign(speed) * Math.pow(Math.abs(speed), 1),
-      (1 / anglem) * loc.y * Math.sign(speed) * Math.pow(Math.abs(speed), 1),
-      colorF(i / music.length),
-      0.5 / music.length
-    );
+    if (speed !== 0 || config.showStationary)
+      createSplat(
+        (loc.x * ringRadius) / viewport.width + 0.5,
+        (loc.y * ringRadius) / viewport.height + 0.5,
+        (1 / anglem) * loc.x * Math.sign(speed) * Math.pow(Math.abs(speed), 1),
+        (1 / anglem) * loc.y * Math.sign(speed) * Math.pow(Math.abs(speed), 1),
+        colorF(i / music.length),
+        (0.5 / music.length) * RR
+      );
     //createSplat(1 - (1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.5/music.length);
   }
 
@@ -366,11 +440,12 @@ document.addEventListener("mousedown", () => {
 window.addEventListener("mouseup", () => {
   pointer.down = false;
 });
-import vexDia from "vex-dialog";
-vex.registerPlugin(vexDia);
-window.dialogue = () => {
-  vex.dialog.alert({
-    unsafeMessage: `<h1 style="line-spacing:140%;">You can view the source code on <a href="http://github.com/cm-tech/musical-ink">Github</a></h1>
-		<p>If the site is slow, try using <a href="https://www.google.com/chrome/">Google Chrome</a></p>`,
-  });
-};
+// import vexDia from "vex-dialog";
+// vex.registerPlugin(vexDia);
+// window.dialogue = () => {
+//   vex.dialog.alert({
+//     unsafeMessage: `<h1 style="line-spacing:140%;">You can view the source code on <a href="http://github.com/cm-tech/musical-ink">Github</a></h1>
+// 		<p>If the site is slow, try using <a href="https://www.google.com/chrome/">Google Chrome</a></p>`,
+//   });
+// };
+window.addEventListener("load",display)

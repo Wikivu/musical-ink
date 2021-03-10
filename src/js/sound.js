@@ -33,17 +33,33 @@ function update() {
 }
 var audioContext = false;
 var audio = document.getElementById("audio");
+function handleFiles(event) {
+  var files = event.target.files;
+  document.getElementById("src").setAttribute("src", URL.createObjectURL(files[0]));
+  document.getElementById("audio").load();
+  toggle();
+  toggle();
+}
 
+document.getElementById("upload").addEventListener("change", handleFiles, false);
+const btn = document.getElementById("btn");
+function setPlaying(newPlaying){
+  playing=newPlaying;
+  if(!playing ) audio.pause(); else audio.play();
+  btn.innerHTML=playing?`<span class="material-icons">pause</span>`:`<span class="material-icons">play_arrow</span>`;
+  update();
+}
+function toggle() {
+  setPlaying(!playing);
+  // playing ? audio.pause() : audio.play();
+  // btn.className = `btn-${playing ? "play" : "pause"}`;
+  // playing = !playing;
+  // update();
+}
 window.addEventListener("load", () => {
-  const btn = document.getElementById("btn");
-  btn.textContent = "";
+  btn.innerHTML=playing?`<span class="material-icons">pause</span>`:`<span class="material-icons">play_arrow</span>`;
 
-  function toggle() {
-    playing ? audio.pause() : audio.play();
-    btn.className = `btn-${playing ? "play" : "pause"}`;
-    playing = !playing;
-    update();
-  }
+  
   var ks = btn.addEventListener("click", () => {
     if (!audioContext) {
       audioContext =
@@ -63,9 +79,10 @@ window.addEventListener("load", () => {
       });
 
       window.addEventListener("beforeunload", () => {
-        audio.pause();
-        btn.className = "btn-pause";
-        playing = false;
+        setPlaying(false);
+        // audio.pause();
+        // // btn.className = "btn-pause";
+        // playing = false;
       });
     } else {
       toggle();

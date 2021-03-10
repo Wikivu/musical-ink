@@ -1,9 +1,9 @@
-import Regl from "./_snowpack/pkg/regl.js";
-import vex from "./_snowpack/pkg/vex-js.js";
-import * as dat from "./_snowpack/pkg/dat.gui.js";
+import Regl from "./snowpack_meta/pkg/regl.js";
+import vex from "./snowpack_meta/pkg/vex-js.js";
+import * as dat from "./snowpack_meta/pkg/dat.gui.js";
 
-import "./_snowpack/pkg/vex-js/dist/css/vex.css.proxy.js";
-import "./_snowpack/pkg/vex-js/dist/css/vex-theme-top.css.proxy.js";
+import "./snowpack_meta/pkg/vex-js/dist/css/vex.css.proxy.js";
+import "./snowpack_meta/pkg/vex-js/dist/css/vex-theme-top.css.proxy.js";
 vex.defaultOptions.className = "vex-theme-top";
 
 var config = {
@@ -402,7 +402,7 @@ document.addEventListener("mousedown", () => {
 window.addEventListener("mouseup", () => {
   pointer.down = false;
 });
-import vexDia from "./_snowpack/pkg/vex-dialog.js";
+import vexDia from "./snowpack_meta/pkg/vex-dialog.js";
 vex.registerPlugin(vexDia);
 window.dialogue = () => {
   vex.dialog.alert({

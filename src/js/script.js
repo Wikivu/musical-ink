@@ -109,17 +109,17 @@ window.velocity = doubleFbo("linear");
 window.density = doubleFbo("linear");
 window.pressure = doubleFbo("linear"); //nearest
 window.divergenceTex = createFbo("linear"); //nearest
-import projectVERT from "./shaders/project.vert";
+import projectVERT from "../shaders/project.vert";
 
-import advectFRAG from "./shaders/advect.frag";
+import advectFRAG from "../shaders/advect.frag";
 
-import clearFRAG from "./shaders/clear.frag";
+import clearFRAG from "../shaders/clear.frag";
 
-import displayFRAG from "./shaders/display.frag";
-import gradientSubtractFRAG from "./shaders/gradientSubtract.frag";
-import divergenceFRAG from "./shaders/divergence.frag";
-import splatFRAG from "./shaders/splat.frag";
-import jacobiFRAG from "./shaders/jacobi.frag";
+import displayFRAG from "../shaders/display.frag";
+import gradientSubtractFRAG from "../shaders/gradientSubtract.frag";
+import divergenceFRAG from "../shaders/divergence.frag";
+import splatFRAG from "../shaders/splat.frag";
+import jacobiFRAG from "../shaders/jacobi.frag";
 var fullscreenDraw = {
   vert: projectVERT,
   attributes: {

@@ -1,6 +1,0 @@
-.DS_Store
-.eslintrc.json
-node_modules/
-package-lock.json
-bundle.js.map
-build/

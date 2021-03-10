@@ -1,9 +1,9 @@
-import Regl from "./snowpack_meta/pkg/regl.js";
-import vex from "./snowpack_meta/pkg/vex-js.js";
-import * as dat from "./snowpack_meta/pkg/dat.gui.js";
+import Regl from "../snowpack_meta/pkg/regl.js";
+import vex from "../snowpack_meta/pkg/vex-js.js";
+import * as dat from "../snowpack_meta/pkg/dat.gui.js";
 
-import "./snowpack_meta/pkg/vex-js/dist/css/vex.css.proxy.js";
-import "./snowpack_meta/pkg/vex-js/dist/css/vex-theme-top.css.proxy.js";
+import "../snowpack_meta/pkg/vex-js/dist/css/vex.css.proxy.js";
+import "../snowpack_meta/pkg/vex-js/dist/css/vex-theme-top.css.proxy.js";
 vex.defaultOptions.className = "vex-theme-top";
 
 var config = {
@@ -109,17 +109,17 @@ window.velocity = doubleFbo("linear");
 window.density = doubleFbo("linear");
 window.pressure = doubleFbo("linear"); //nearest
 window.divergenceTex = createFbo("linear"); //nearest
-import projectVERT from "./shaders/project.js";
+import projectVERT from "../shaders/project.js";
 
-import advectFRAG from "./shaders/advect.js";
+import advectFRAG from "../shaders/advect.js";
 
-import clearFRAG from "./shaders/clear.js";
+import clearFRAG from "../shaders/clear.js";
 
-import displayFRAG from "./shaders/display.js";
-import gradientSubtractFRAG from "./shaders/gradientSubtract.js";
-import divergenceFRAG from "./shaders/divergence.js";
-import splatFRAG from "./shaders/splat.js";
-import jacobiFRAG from "./shaders/jacobi.js";
+import displayFRAG from "../shaders/display.js";
+import gradientSubtractFRAG from "../shaders/gradientSubtract.js";
+import divergenceFRAG from "../shaders/divergence.js";
+import splatFRAG from "../shaders/splat.js";
+import jacobiFRAG from "../shaders/jacobi.js";
 var fullscreenDraw = {
   vert: projectVERT,
   attributes: {
@@ -402,7 +402,7 @@ document.addEventListener("mousedown", () => {
 window.addEventListener("mouseup", () => {
   pointer.down = false;
 });
-import vexDia from "./snowpack_meta/pkg/vex-dialog.js";
+import vexDia from "../snowpack_meta/pkg/vex-dialog.js";
 vex.registerPlugin(vexDia);
 window.dialogue = () => {
   vex.dialog.alert({

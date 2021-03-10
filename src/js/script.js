@@ -115,16 +115,6 @@ window.texelSize = ({ viewportWidth, viewportHeight }) => [
   1 / viewportWidth,
   1 / viewportHeight,
 ];
-// window.texelSize2 = ({ viewportWidth, viewportHeight }) => [
-//   1 / viewportWidth,
-//   1 / viewportHeight,
-// ];
-window.viewportg = () => ({
-  x: 0,
-  y: 0,
-  width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
-  height: window.innerHeight >> config.TEXTURE_DOWNSAMPLE,
-});
 const advect = regl(
   Object.assign(
     {

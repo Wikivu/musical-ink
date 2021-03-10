@@ -2,7 +2,6 @@
   "imports": {
     "dat.gui": "./dat.gui.js",
     "regl": "./regl.js",
-    "vex-dialog": "./vex-dialog.js",
     "vex-js": "./vex-js.js",
     "vex-js/dist/css/vex-theme-top.css": "./vex-js/dist/css/vex-theme-top.css",
     "vex-js/dist/css/vex.css": "./vex-js/dist/css/vex.css"

@@ -3,6 +3,8 @@
 
 <head>
     <title>Webgl Fluid</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Comfortaa|Open+Sans" rel="stylesheet">
     <style>
         html,
@@ -62,12 +64,13 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: #fff;
-            font-family: monospace;
+            /* font-family: monospace; */
             z-index: 1;
             margin: 0;
+            text-shadow: 0 0 0.25em black,0 0 0.25em black,0 0 0.25em black,0 0 0.25em black,0 0 0.25em black,0 0 0.25em black,0 0 0.25em black,0 0 0.25em black,0 0 0.25em black,0 0 0.25em black,0 0 0.25em black;
         }
         
-        .btn-play {
+        /* .btn-play {
             width: 0;
             height: 0;
             border-top: 8px solid transparent;
@@ -80,16 +83,20 @@
             height: 16px;
             border-right: 4px solid #fff;
             border-left: 4px solid #fff;
-        }
+        } */
     </style>
 </head>
 
 <body>
-    <audio id="audio" crossOrigin="anonymous" src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/1715/the_xx_-_intro.mp3" loop></audio>
+    <audio id="audio" crossOrigin="anonymous" loop>
+    
+  <source src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/1715/the_xx_-_intro.mp3" id="src" />
+    </audio>
     <!-- <audio id="audio" crossOrigin="anonymous" src="Xenogenesis.mp3" loop></audio> -->
 
-    <a class="info" onclick="dialogue()">&#9432;</a>
-    <p id="btn" class="btn-play">Loading...</p>
+    <!-- <a class="info" onclick="dialogue()">&#9432;</a> -->
+    <input type="file" id="upload" />
+    <p id="btn">Loading...</p>
     <script src="./js/sound.js" type="module"></script>
 </body>
 

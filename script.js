@@ -25,12 +25,15 @@ var regl = Regl({
   pixelRatio: 1, // << config.TEXTURE_DOWNSAMPLE,
   extensions: ["OES_texture_half_float", "OES_texture_half_float_linear"],
 });
-let downSamplelis=[];
+let downSamplelis = [];
 const gui = new dat.GUI();
 gui.add(config, "SPLAT_RADIUS", 0.01, 0.1).name("splat radius");
-gui.add(config, "TEXTURE_DOWNSAMPLE", 0, 10,1).name("downsample").onFinishChange(()=>{
-  downSamplelis.forEach(x=>x());
-});
+gui
+  .add(config, "TEXTURE_DOWNSAMPLE", 0, 10, 1)
+  .name("downsample")
+  .onFinishChange(() => {
+    downSamplelis.forEach((x) => x());
+  });
 function hslToRgb(h) {
   return [
     Math.sin(6.28 * h + 2) / 2 + 0.5,
@@ -69,7 +72,7 @@ var createFbo = (filter) => {
     width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
     height: window.innerHeight >> config.TEXTURE_DOWNSAMPLE,
   });
-  const updateSizes=() => {
+  const updateSizes = () => {
     // tx.resize(window.innerWidth >> config.TEXTURE_DOWNSAMPLE,window.innerHeight >> config.TEXTURE_DOWNSAMPLE)
     tx = tx({
       width: window.innerWidth >> config.TEXTURE_DOWNSAMPLE,
@@ -95,20 +98,31 @@ var createFbo = (filter) => {
 
     // })
     // fbg(window.innerWidth >> config.TEXTURE_DOWNSAMPLE,window.innerHeight >> config.TEXTURE_DOWNSAMPLE)
-  }
+  };
   window.addEventListener("resize", updateSizes);
-  downSamplelis.push(updateSizes)
+  downSamplelis.push(updateSizes);
 
   return () => fbg;
 };
 
 window.velocity = doubleFbo("linear");
 window.density = doubleFbo("linear");
-window.pressure = doubleFbo("linear");//nearest
-window.divergenceTex = createFbo("linear");//nearest
+window.pressure = doubleFbo("linear"); //nearest
+window.divergenceTex = createFbo("linear"); //nearest
+import projectVERT from "./shaders/project.vert";
 
+import advectFRAG from "./shaders/advect.frag";
+
+import clearFRAG from "./shaders/clear.frag";
+
+import displayFRAG from "./shaders/display.frag";
+import gradientSubtractFRAG from "./shaders/gradientSubtract.frag";
+import divergenceFRAG from "./shaders/divergence.frag";
+import splatFRAG from "./shaders/splat.frag";
+import jacobiFRAG from "./shaders/jacobi.frag";
+console.log(projectVERT);
 var fullscreenDraw = {
-  vert: require("raw-loader!./shaders/project.vert"),
+  vert: projectVERT,
   attributes: {
     points: [1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1],
   },
@@ -132,7 +146,7 @@ window.viewportg = () => ({
 window.advect = regl(
   Object.assign(
     {
-      frag: require("raw-loader!./shaders/advect.frag"),
+      frag: advectFRAG,
       framebuffer: regl.prop("framebuffer"),
       uniforms: {
         timestep: 0.017,
@@ -149,7 +163,7 @@ window.advect = regl(
 window.divergence = regl(
   Object.assign(
     {
-      frag: require("raw-loader!./shaders/divergence.frag"),
+      frag: divergenceFRAG,
       framebuffer: () => divergenceTex(),
       uniforms: {
         velocity: () => velocity.read,
@@ -163,7 +177,7 @@ window.divergence = regl(
 window.clear = regl(
   Object.assign(
     {
-      frag: require("raw-loader!./shaders/clear.frag"),
+      frag: clearFRAG,
       framebuffer: () => pressure.write,
       uniforms: {
         pressure: () => pressure.read,
@@ -177,7 +191,7 @@ window.clear = regl(
 window.gradientSubtract = regl(
   Object.assign(
     {
-      frag: require("raw-loader!./shaders/gradientSubtract.frag"),
+      frag: gradientSubtractFRAG,
       framebuffer: () => velocity.write,
       uniforms: {
         pressure: () => pressure.read,
@@ -192,7 +206,7 @@ window.gradientSubtract = regl(
 window.jacobi = regl(
   Object.assign(
     {
-      frag: require("raw-loader!./shaders/jacobi.frag"),
+      frag: jacobiFRAG,
       framebuffer: () => pressure.write,
       uniforms: {
         pressure: () => pressure.read,
@@ -207,7 +221,7 @@ window.jacobi = regl(
 window.display = regl(
   Object.assign(
     {
-      frag: require("raw-loader!./shaders/display.frag"),
+      frag: displayFRAG,
       uniforms: {
         density: () => density.read,
         texelSize,
@@ -225,7 +239,7 @@ window.display = regl(
 window.splat = regl(
   Object.assign(
     {
-      frag: require("raw-loader!./shaders/splat.frag"),
+      frag: splatFRAG,
       framebuffer: regl.prop("framebuffer"),
       uniforms: {
         uTarget: regl.prop("uTarget"),
@@ -389,8 +403,8 @@ document.addEventListener("mousedown", () => {
 window.addEventListener("mouseup", () => {
   pointer.down = false;
 });
-
-vex.registerPlugin(require("vex-dialog"));
+import vexDia from "vex-dialog";
+vex.registerPlugin(vexDia);
 window.dialogue = () => {
   vex.dialog.alert({
     unsafeMessage: `<h1 style="line-spacing:140%;">You can view the source code on <a href="http://github.com/cm-tech/musical-ink">Github</a></h1>

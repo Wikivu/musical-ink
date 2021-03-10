@@ -303,6 +303,7 @@ export function frame(music, average, allAve) {
     createSplat(1 - (1 + i / music.length) / 2, 0.5, 0, -Math.sign(speed) * Math.pow(Math.abs(speed), 1), colorF(i / music.length), 0.5/music.length);
   }*/
   var anglem = 1 / Math.PI;
+  let ringRadius = Math.min(viewport.height, viewport.width);
   for (let i = 0; i < music.length; i++) {
     var loc = {
       x: Math.sin(((i + 0.5) / music.length) * Math.PI) * anglem,
@@ -311,10 +312,8 @@ export function frame(music, average, allAve) {
     var speed =
       (Math.log((music[i] / (average[i] * 20 + allAve * 1)) * 21) * 3000) | 0;
     createSplat(
-      (loc.x * Math.min(viewport.height, viewport.width)) / viewport.width +
-        0.5,
-      (loc.y * Math.min(viewport.height, viewport.width)) / viewport.height +
-        0.5,
+      (loc.x * ringRadius) / viewport.width + 0.5,
+      (loc.y * ringRadius) / viewport.height + 0.5,
       (1 / anglem) * loc.x * Math.sign(speed) * Math.pow(Math.abs(speed), 1),
       (1 / anglem) * loc.y * Math.sign(speed) * Math.pow(Math.abs(speed), 1),
       colorF(i / music.length),
@@ -330,10 +329,8 @@ export function frame(music, average, allAve) {
     var speed =
       (Math.log((music[i] / (average[i] * 20 + allAve * 1)) * 21) * 3000) | 0;
     createSplat(
-      (loc.x * Math.min(viewport.height, viewport.width)) / viewport.width +
-        0.5,
-      (loc.y * Math.min(viewport.height, viewport.width)) / viewport.height +
-        0.5,
+      (loc.x * ringRadius) / viewport.width + 0.5,
+      (loc.y * ringRadius) / viewport.height + 0.5,
       (1 / anglem) * loc.x * Math.sign(speed) * Math.pow(Math.abs(speed), 1),
       (1 / anglem) * loc.y * Math.sign(speed) * Math.pow(Math.abs(speed), 1),
       colorF(i / music.length),

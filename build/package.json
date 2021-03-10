@@ -24,6 +24,6 @@
     },
     "scripts": {
         "start": "snowpack dev",
-        "build": "snowpack build && rm -rf docs/.git"
+        "build": "snowpack build && rm -rf build/.git"
     }
 }

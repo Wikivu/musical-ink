@@ -13,13 +13,17 @@ vec3 rgb2hsv(vec3 c) {
   float e = 1.0e-10;
   return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
 }
+float veLen(vec3 inp){
+  return inp.x+inp.y+inp.z;
+}
 vec3 hsv2rgb(vec3 c) {
   vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
   vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
   return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
-/*void main() {
-  float pixelSize = 0.5;
+void main() {
+  float pixelSize = 0.01;
+  float g=texelSize.y*40.0;
   vec2 coords2 = floor(coords / texelSize / pixelSize) * texelSize * pixelSize;
   vec2 coordsTL =
       floor(coords / texelSize / pixelSize) * texelSize * pixelSize +
@@ -30,11 +34,11 @@ vec3 hsv2rgb(vec3 c) {
   float w = texture2D(density, coords2).a;
   vec3 hsvT = rgb2hsv(texture2D(density, coords2).rgb);
   vec3 hsvTE = rgb2hsv(texture2D(density, coords2).rgb);
-  vec3 cTL = vec3(vec2(-1.0, -1.0) * 0.025,
-                  rgb2hsv(texture2D(density, coordsTL).rgb).z);
-  vec3 cTR = vec3(vec2(1.0, -1.0) * 0.025,
-                  rgb2hsv(texture2D(density, coordsTR).rgb).z);
-  vec3 c = vec3(0.0, 0.0, rgb2hsv(texture2D(density, coords2).rgb).z);
+  vec3 cTL = vec3(vec2(-1.0, -1.0)*g,
+                  veLen(texture2D(density, coordsTL).rgb));
+  vec3 cTR = vec3(vec2(1.0, -1.0)*g,
+                  veLen(texture2D(density, coordsTR).rgb));
+  vec3 c = vec3(0.0, 0.0, veLen(texture2D(density, coords2).rgb));
   vec3 norm = normalize(cross(cTL - c, cTR - c));
   hsvT.y = 0.0;
   hsvTE.y = 1.0;
@@ -42,7 +46,7 @@ vec3 hsv2rgb(vec3 c) {
   hsvTE.z = hsvT.z * (hsvTE.z > 0.1 ? 1.0 : hsvTE.z / 0.1);
   float posterCount = 100.0;
   gl_FragColor = vec4(hsv2rgb(hsvTE) + vec3(1.0) * pow(hsvTE.z, 4.0) / 2.0, w);
-}*/
+}
 
 // Only used for rendering, but useful helpers
 float softmax(float a, float b, float k) {
@@ -120,9 +124,7 @@ vec3 light(vec2 uv, float BUMP, float SRC_DIST, vec2 dxy, float iTime, inout vec
 
 
 #define BUMP 3200.0
-float veLen(vec3 inp){
-  return inp.x+inp.y+inp.z;
-}
+
 #define D(d) -veLen(texture2D(density, fract(uv+(d+0.0))).xyz)
 
 vec2 diff(vec2 uv, float mip) {
@@ -142,7 +144,7 @@ vec2 diff(vec2 uv, float mip) {
 vec4 contrast(vec4 col, float x) {
 	return x * (col - 0.5) + 0.5;
 }
-
+/*
 void main( ){
   float pixelSize = 0.5;
   vec2 coords2 = floor(coords / texelSize / pixelSize) * texelSize * pixelSize;
@@ -192,3 +194,4 @@ void main( ){
     //fragColor = diffuse;
     //fragColor = vec4(diffuse+(occ-0.5));
 }
+*/

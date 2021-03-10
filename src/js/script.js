@@ -14,7 +14,7 @@ var config = {
   PRESSURE_ITERATIONS: 40,
   SPLAT_RADIUS: 0.025,
   showStationary: true,
-  displayShader: 1,
+  displayShader: 0,
   loadFile: function () {
     document.getElementById("upload").click();
   },
@@ -39,7 +39,7 @@ gui
   .onFinishChange(() => {
     downSamplelis.forEach((x) => x());
   });
-gui.add(config, "displayShader", { paint: 0, rorschach: 1}).name("style");
+gui.add(config, "displayShader", { paint: 0, rorschach: 1 }).name("style");
 gui.add(config, "showStationary").name("show stationary");
 gui.add(config, "loadFile").name("upload mp3");
 function hslToRgb(h) {
@@ -264,6 +264,7 @@ const splatV = regl(
         inkColor: regl.prop("inkColor"),
         inkVelocity: regl.prop("inkVelocity"),
         radius: regl.prop("size"),
+        texelSize,
       },
     },
     fullscreenDraw
@@ -283,6 +284,7 @@ const splatD = regl(
         inkColor: regl.prop("inkColor"),
         inkVelocity: regl.prop("inkVelocity"),
         radius: regl.prop("size"),
+        texelSize,
       },
     },
     fullscreenDraw
@@ -295,7 +297,7 @@ function createSplat(x, y, dx, dy, color, size) {
     density: density.read,
     point: [x, 1 - y],
     inkVelocity: [dx, -dy, 1],
-    inkColor:color,
+    inkColor: color,
     size,
   });
 
@@ -305,7 +307,7 @@ function createSplat(x, y, dx, dy, color, size) {
     density: density.read,
     point: [x, 1 - y],
     inkVelocity: [dx, -dy, 1],
-    inkColor:color,
+    inkColor: color,
     size,
   });
   velocity.swap();
@@ -448,4 +450,4 @@ window.addEventListener("mouseup", () => {
 // 		<p>If the site is slow, try using <a href="https://www.google.com/chrome/">Google Chrome</a></p>`,
 //   });
 // };
-window.addEventListener("load",display)
+window.addEventListener("load", display);

@@ -344,7 +344,7 @@ export function frame(music, average, allAve) {
   }*/
   var anglem = 1 / Math.PI;
   let ringRadius = Math.min(viewport.height, viewport.width) / 2;
-  let RR = 1;
+  let RR = 2;
   for (let i = 0; i < music.length; i++) {
     var loc = {
       x: Math.sin(((i + 0.5) / music.length) * Math.PI) * anglem,

@@ -120,7 +120,6 @@ import gradientSubtractFRAG from "./shaders/gradientSubtract.js";
 import divergenceFRAG from "./shaders/divergence.js";
 import splatFRAG from "./shaders/splat.js";
 import jacobiFRAG from "./shaders/jacobi.js";
-console.log(projectVERT);
 var fullscreenDraw = {
   vert: projectVERT,
   attributes: {

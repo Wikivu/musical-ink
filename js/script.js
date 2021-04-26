@@ -1,10 +1,6 @@
 import Regl from "../snowpack_meta/pkg/regl.js";
-import vex from "../snowpack_meta/pkg/vex-js.js";
 import * as dat from "../snowpack_meta/pkg/dat.gui.js";
 
-import "../snowpack_meta/pkg/vex-js/dist/css/vex.css.proxy.js";
-import "../snowpack_meta/pkg/vex-js/dist/css/vex-theme-top.css.proxy.js";
-vex.defaultOptions.className = "vex-theme-top";
 
 var config = {
   TEXTURE_DOWNSAMPLE: 1,
@@ -442,12 +438,4 @@ document.addEventListener("mousedown", () => {
 window.addEventListener("mouseup", () => {
   pointer.down = false;
 });
-// import vexDia from "vex-dialog";
-// vex.registerPlugin(vexDia);
-// window.dialogue = () => {
-//   vex.dialog.alert({
-//     unsafeMessage: `<h1 style="line-spacing:140%;">You can view the source code on <a href="http://github.com/cm-tech/musical-ink">Github</a></h1>
-// 		<p>If the site is slow, try using <a href="https://www.google.com/chrome/">Google Chrome</a></p>`,
-//   });
-// };
 window.addEventListener("load", display);

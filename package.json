@@ -2,28 +2,15 @@
     "name": "fluid",
     "version": "0.0.1",
     "dependencies": {
-        "@babel/core": "^7.0.0-beta.35",
-        "@babel/preset-env": "^7.0.0-beta.35",
         "dat.gui": "^0.7.7",
-        "regl": "^2.1.0",
-        "vex-dialog": "^1.0.7",
-        "vex-js": "^4.0.1"
-    },
-    "devDependencies": {
-        "babel-core": "^6.26.0",
-        "babel-loader": "^8.0.0-beta.0",
-        "babel-preset-env": "^1.6.1",
-        "css-loader": "^5.2.4",
-        "raw-loader": "^4.0.2",
-        "snowpack": "^3.0.13",
-        "snowpack-plugin-raw-file-loader": "^1.0.9",
-        "style-loader": "^2.0.0",
-        "uglifyjs-webpack-plugin": "^2.2.0",
-        "webpack": "^5.35.1",
-        "webpack-dev-server": "^3.11.2"
+        "regl": "^2.1.0"
     },
     "scripts": {
         "start": "snowpack dev",
         "build": "snowpack build && touch build/.nojekyll"
+    },
+    "devDependencies": {
+        "snowpack": "^3.3.5",
+        "snowpack-plugin-raw-file-loader": "^1.0.9"
     }
 }

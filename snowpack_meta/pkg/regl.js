@@ -2,7 +2,7 @@ import { c as createCommonjsModule, a as commonjsGlobal } from './common/_common
 
 var regl = createCommonjsModule(function (module, exports) {
 (function (global, factory) {
-    module.exports = factory() ;
+     module.exports = factory() ;
 }(commonjsGlobal, (function () {
 var isTypedArray = function (x) {
   return (
@@ -733,7 +733,7 @@ function unbox (x, path) {
   } else if (typeof x === 'number' || typeof x === 'boolean') {
     return new DynamicVariable(DYN_CONSTANT, x)
   } else if (Array.isArray(x)) {
-    return new DynamicVariable(DYN_ARRAY, x.map((y, i) => unbox(y, path + '[' + i + ']')))
+    return new DynamicVariable(DYN_ARRAY, x.map(function (y, i) { return unbox(y, path + '[' + i + ']') }))
   } else if (x instanceof DynamicVariable) {
     return x
   }
@@ -791,7 +791,9 @@ function createCanvas (element, onDone, pixelRatio) {
     margin: 0,
     padding: 0,
     top: 0,
-    left: 0
+    left: 0,
+    width: '100%',
+    height: '100%'
   });
   element.appendChild(canvas);
 
@@ -807,16 +809,12 @@ function createCanvas (element, onDone, pixelRatio) {
     var w = window.innerWidth;
     var h = window.innerHeight;
     if (element !== document.body) {
-      var bounds = element.getBoundingClientRect();
+      var bounds = canvas.getBoundingClientRect();
       w = bounds.right - bounds.left;
       h = bounds.bottom - bounds.top;
     }
     canvas.width = pixelRatio * w;
     canvas.height = pixelRatio * h;
-    extend(canvas.style, {
-      width: w + 'px',
-      height: h + 'px'
-    });
   }
 
   var resizeObserver;
@@ -3622,10 +3620,11 @@ function createTextureSet (
       }
 
       copyFlags(texture, faces[0]);
-
-      if (!limits.npotTextureCube) {
-        check$1(isPow2$1(texture.width) && isPow2$1(texture.height), 'your browser does not support non power or two texture dimensions');
-      }
+      check$1.optional(function () {
+        if (!limits.npotTextureCube) {
+          check$1(isPow2$1(texture.width) && isPow2$1(texture.height), 'your browser does not support non power or two texture dimensions');
+        }
+      });
 
       if (texInfo.genMipmaps) {
         texture.mipmask = (faces[0].width << 1) - 1;
@@ -4570,15 +4569,17 @@ function wrapFBOState (
             } else if (colorRenderbufferFormats.indexOf(colorFormat) >= 0) {
               colorTexture = false;
             } else {
-              if (colorTexture) {
-                check$1.oneOf(
-                  options.colorFormat, colorTextureFormats,
-                  'invalid color format for texture');
-              } else {
-                check$1.oneOf(
-                  options.colorFormat, colorRenderbufferFormats,
-                  'invalid color format for renderbuffer');
-              }
+              check$1.optional(function () {
+                if (colorTexture) {
+                  check$1.oneOf(
+                    options.colorFormat, colorTextureFormats,
+                    'invalid color format for texture');
+                } else {
+                  check$1.oneOf(
+                    options.colorFormat, colorRenderbufferFormats,
+                    'invalid color format for renderbuffer');
+                }
+              });
             }
           }
         }
@@ -5032,6 +5033,16 @@ function wrapFBOState (
 
 var GL_FLOAT$6 = 5126;
 var GL_ARRAY_BUFFER$1 = 34962;
+var GL_ELEMENT_ARRAY_BUFFER$1 = 34963;
+
+var VAO_OPTIONS = [
+  'attributes',
+  'elements',
+  'offset',
+  'count',
+  'primitive',
+  'instances'
+];
 
 function AttributeRecord () {
   this.state = 0;
@@ -5055,7 +5066,9 @@ function wrapAttributeState (
   extensions,
   limits,
   stats,
-  bufferState) {
+  bufferState,
+  elementState,
+  drawState) {
   var NUM_ATTRIBUTES = limits.maxAttributes;
   var attributeBindings = new Array(NUM_ATTRIBUTES);
   for (var i = 0; i < NUM_ATTRIBUTES; ++i) {
@@ -5128,6 +5141,7 @@ function wrapAttributeState (
         var binding = attributeBindings[i];
         if (binding.buffer) {
           gl.enableVertexAttribArray(i);
+          binding.buffer.bind();
           gl.vertexAttribPointer(i, binding.size, binding.type, binding.normalized, binding.stride, binding.offfset);
           if (exti && binding.divisor) {
             exti.vertexAttribDivisorANGLE(i, binding.divisor);
@@ -5136,6 +5150,11 @@ function wrapAttributeState (
           gl.disableVertexAttribArray(i);
           gl.vertexAttrib4f(i, binding.x, binding.y, binding.z, binding.w);
         }
+      }
+      if (drawState.elements) {
+        gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER$1, drawState.elements.buffer.buffer);
+      } else {
+        gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER$1, null);
       }
     }
     state.currentVAO = vao;
@@ -5150,6 +5169,12 @@ function wrapAttributeState (
   function REGLVAO () {
     this.id = ++vaoCount;
     this.attributes = [];
+    this.elements = null;
+    this.ownsElements = false;
+    this.count = 0;
+    this.offset = 0;
+    this.instances = -1;
+    this.primitive = 4;
     var extension = extVAO();
     if (extension) {
       this.vao = extension.createVertexArrayOES();
@@ -5180,6 +5205,12 @@ function wrapAttributeState (
     for (var j = attributes.length; j < NUM_ATTRIBUTES; ++j) {
       gl.disableVertexAttribArray(j);
     }
+    var elements = elementState.getElements(this.elements);
+    if (elements) {
+      gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER$1, elements.buffer.buffer);
+    } else {
+      gl.bindBuffer(GL_ELEMENT_ARRAY_BUFFER$1, null);
+    }
   };
 
   REGLVAO.prototype.refresh = function () {
@@ -5187,7 +5218,8 @@ function wrapAttributeState (
     if (ext) {
       ext.bindVertexArrayOES(this.vao);
       this.bindAttrs();
-      state.currentVAO = this;
+      state.currentVAO = null;
+      ext.bindVertexArrayOES(null);
     }
   };
 
@@ -5200,6 +5232,11 @@ function wrapAttributeState (
       }
       extension.deleteVertexArrayOES(this.vao);
       this.vao = null;
+    }
+    if (this.ownsElements) {
+      this.elements.destroy();
+      this.elements = null;
+      this.ownsElements = false;
     }
     if (vaoSet[this.id]) {
       delete vaoSet[this.id];
@@ -5220,8 +5257,80 @@ function wrapAttributeState (
     var vao = new REGLVAO();
     stats.vaoCount += 1;
 
-    function updateVAO (attributes) {
-      check$1(Array.isArray(attributes), 'arguments to vertex array constructor must be an array');
+    function updateVAO (options) {
+      var attributes;
+      if (Array.isArray(options)) {
+        attributes = options;
+        if (vao.elements && vao.ownsElements) {
+          vao.elements.destroy();
+        }
+        vao.elements = null;
+        vao.ownsElements = false;
+        vao.offset = 0;
+        vao.count = 0;
+        vao.instances = -1;
+        vao.primitive = 4;
+      } else {
+        check$1(typeof options === 'object', 'invalid arguments for create vao');
+        check$1('attributes' in options, 'must specify attributes for vao');
+        if (options.elements) {
+          var elements = options.elements;
+          if (vao.ownsElements) {
+            if (typeof elements === 'function' && elements._reglType === 'elements') {
+              vao.elements.destroy();
+              vao.ownsElements = false;
+            } else {
+              vao.elements(elements);
+              vao.ownsElements = false;
+            }
+          } else if (elementState.getElements(options.elements)) {
+            vao.elements = options.elements;
+            vao.ownsElements = false;
+          } else {
+            vao.elements = elementState.create(options.elements);
+            vao.ownsElements = true;
+          }
+        } else {
+          vao.elements = null;
+          vao.ownsElements = false;
+        }
+        attributes = options.attributes;
+
+        // set default vao
+        vao.offset = 0;
+        vao.count = -1;
+        vao.instances = -1;
+        vao.primitive = 4;
+
+        // copy element properties
+        if (vao.elements) {
+          vao.count = vao.elements._elements.vertCount;
+          vao.primitive = vao.elements._elements.primType;
+        }
+
+        if ('offset' in options) {
+          vao.offset = options.offset | 0;
+        }
+        if ('count' in options) {
+          vao.count = options.count | 0;
+        }
+        if ('instances' in options) {
+          vao.instances = options.instances | 0;
+        }
+        if ('primitive' in options) {
+          check$1(options.primitive in primTypes, 'bad primitive type: ' + options.primitive);
+          vao.primitive = primTypes[options.primitive];
+        }
+
+        check$1.optional(() => {
+          var keys = Object.keys(options);
+          for (var i = 0; i < keys.length; ++i) {
+            check$1(VAO_OPTIONS.indexOf(keys[i]) >= 0, 'invalid option for vao: "' + keys[i] + '" valid options are ' + VAO_OPTIONS);
+          }
+        });
+        check$1(Array.isArray(attributes), 'attributes must be an array');
+      }
+
       check$1(attributes.length < NUM_ATTRIBUTES, 'too many attributes');
       check$1(attributes.length > 0, 'must specify at least one attribute');
 
@@ -5315,6 +5424,13 @@ function wrapAttributeState (
         }
       }
       vao.buffers.length = 0;
+
+      if (vao.ownsElements) {
+        vao.elements.destroy();
+        vao.elements = null;
+        vao.ownsElements = false;
+      }
+
       vao.destroy();
     };
 
@@ -5445,13 +5561,16 @@ function wrapShaderState (gl, stringStore, stats, config) {
               gl.getUniformLocation(program, name),
               info));
           }
-        } else {
-          insertActiveInfo(uniforms, new ActiveInfo(
-            info.name,
-            stringStore.id(info.name),
-            gl.getUniformLocation(program, info.name),
-            info));
         }
+        var uniName = info.name;
+        if (info.size > 1) {
+          uniName = uniName.replace('[0]', '');
+        }
+        insertActiveInfo(uniforms, new ActiveInfo(
+          uniName,
+          stringStore.id(uniName),
+          gl.getUniformLocation(program, uniName),
+          info));
       }
     }
 
@@ -5607,19 +5726,21 @@ function wrapReadPixels (
         'You cannot read from a renderbuffer');
       type = framebufferState.next.colorAttachments[0].texture._texture.type;
 
-      if (extensions.oes_texture_float) {
-        check$1(
-          type === GL_UNSIGNED_BYTE$7 || type === GL_FLOAT$7,
-          'Reading from a framebuffer is only allowed for the types \'uint8\' and \'float\'');
+      check$1.optional(function () {
+        if (extensions.oes_texture_float) {
+          check$1(
+            type === GL_UNSIGNED_BYTE$7 || type === GL_FLOAT$7,
+            'Reading from a framebuffer is only allowed for the types \'uint8\' and \'float\'');
 
-        if (type === GL_FLOAT$7) {
-          check$1(limits.readFloat, 'Reading \'float\' values is not permitted in your browser. For a fallback, please see: https://www.npmjs.com/package/glsl-read-float');
+          if (type === GL_FLOAT$7) {
+            check$1(limits.readFloat, 'Reading \'float\' values is not permitted in your browser. For a fallback, please see: https://www.npmjs.com/package/glsl-read-float');
+          }
+        } else {
+          check$1(
+            type === GL_UNSIGNED_BYTE$7,
+            'Reading from a framebuffer is only allowed for the type \'uint8\'');
         }
-      } else {
-        check$1(
-          type === GL_UNSIGNED_BYTE$7,
-          'Reading from a framebuffer is only allowed for the type \'uint8\'');
-      }
+      });
     }
 
     var x = 0;
@@ -5975,7 +6096,7 @@ var NESTED_OPTIONS = [
 ];
 
 var GL_ARRAY_BUFFER$2 = 34962;
-var GL_ELEMENT_ARRAY_BUFFER$1 = 34963;
+var GL_ELEMENT_ARRAY_BUFFER$2 = 34963;
 
 var GL_FRAGMENT_SHADER$1 = 35632;
 var GL_VERTEX_SHADER$1 = 35633;
@@ -6233,6 +6354,7 @@ function reglCore (
 
   var extInstancing = extensions.angle_instanced_arrays;
   var extDrawBuffers = extensions.webgl_draw_buffers;
+  var extVertexArrays = extensions.oes_vertex_array_object;
 
   // ===================================================
   // ===================================================
@@ -6817,15 +6939,59 @@ function reglCore (
     var staticOptions = options.static;
     var dynamicOptions = options.dynamic;
 
+    // TODO: should use VAO to get default values for offset properties
+    // should move vao parse into here and out of the old stuff
+
+    var staticDraw = {};
+    var vaoActive = false;
+
+    function parseVAO () {
+      if (S_VAO in staticOptions) {
+        var vao = staticOptions[S_VAO];
+        if (vao !== null && attributeState.getVAO(vao) === null) {
+          vao = attributeState.createVAO(vao);
+        }
+
+        vaoActive = true;
+        staticDraw.vao = vao;
+
+        return createStaticDecl(function (env) {
+          var vaoRef = attributeState.getVAO(vao);
+          if (vaoRef) {
+            return env.link(vaoRef)
+          } else {
+            return 'null'
+          }
+        })
+      } else if (S_VAO in dynamicOptions) {
+        vaoActive = true;
+        var dyn = dynamicOptions[S_VAO];
+        return createDynamicDecl(dyn, function (env, scope) {
+          var vaoRef = env.invoke(scope, dyn);
+          return scope.def(env.shared.vao + '.getVAO(' + vaoRef + ')')
+        })
+      }
+      return null
+    }
+
+    var vao = parseVAO();
+
+    var elementsActive = false;
+
     function parseElements () {
       if (S_ELEMENTS in staticOptions) {
         var elements = staticOptions[S_ELEMENTS];
+        staticDraw.elements = elements;
         if (isBufferArgs(elements)) {
-          elements = elementState.getElements(elementState.create(elements, true));
+          var e = staticDraw.elements = elementState.create(elements, true);
+          elements = elementState.getElements(e);
+          elementsActive = true;
         } else if (elements) {
           elements = elementState.getElements(elements);
+          elementsActive = true;
           check$1.command(elements, 'invalid elements', env.commandStr);
         }
+
         var result = createStaticDecl(function (env, scope) {
           if (elements) {
             var result = env.link(elements);
@@ -6838,6 +7004,8 @@ function reglCore (
         result.value = elements;
         return result
       } else if (S_ELEMENTS in dynamicOptions) {
+        elementsActive = true;
+
         var dyn = dynamicOptions[S_ELEMENTS];
         return createDynamicDecl(dyn, function (env, scope) {
           var shared = env.shared;
@@ -6868,8 +7036,15 @@ function reglCore (
 
           return elements
         })
+      } else if (vaoActive) {
+        return new Declaration(
+          vao.thisDep,
+          vao.contextDep,
+          vao.propDep,
+          function (env, scope) {
+            return scope.def(env.shared.vao + '.currentVAO?' + env.shared.elements + '.getElements(' + env.shared.vao + '.currentVAO.elements):null')
+          })
       }
-
       return null
     }
 
@@ -6878,6 +7053,7 @@ function reglCore (
     function parsePrimitive () {
       if (S_PRIMITIVE in staticOptions) {
         var primitive = staticOptions[S_PRIMITIVE];
+        staticDraw.primitive = primitive;
         check$1.commandParameter(primitive, primTypes, 'invalid primitve', env.commandStr);
         return createStaticDecl(function (env, scope) {
           return primTypes[primitive]
@@ -6894,7 +7070,7 @@ function reglCore (
           });
           return scope.def(PRIM_TYPES, '[', prim, ']')
         })
-      } else if (elements) {
+      } else if (elementsActive) {
         if (isStatic(elements)) {
           if (elements.value) {
             return createStaticDecl(function (env, scope) {
@@ -6915,6 +7091,14 @@ function reglCore (
               return scope.def(elements, '?', elements, '.primType:', GL_TRIANGLES$1)
             })
         }
+      } else if (vaoActive) {
+        return new Declaration(
+          vao.thisDep,
+          vao.contextDep,
+          vao.propDep,
+          function (env, scope) {
+            return scope.def(env.shared.vao + '.currentVAO?' + env.shared.vao + '.currentVAO.primitive:' + GL_TRIANGLES$1)
+          })
       }
       return null
     }
@@ -6922,6 +7106,11 @@ function reglCore (
     function parseParam (param, isOffset) {
       if (param in staticOptions) {
         var value = staticOptions[param] | 0;
+        if (isOffset) {
+          staticDraw.offset = value;
+        } else {
+          staticDraw.instances = value;
+        }
         check$1.command(!isOffset || value >= 0, 'invalid ' + param, env.commandStr);
         return createStaticDecl(function (env, scope) {
           if (isOffset) {
@@ -6943,11 +7132,29 @@ function reglCore (
           }
           return result
         })
-      } else if (isOffset && elements) {
-        return createStaticDecl(function (env, scope) {
-          env.OFFSET = '0';
-          return 0
-        })
+      } else if (isOffset) {
+        if (elementsActive) {
+          return createStaticDecl(function (env, scope) {
+            env.OFFSET = 0;
+            return 0
+          })
+        } else if (vaoActive) {
+          return new Declaration(
+            vao.thisDep,
+            vao.contextDep,
+            vao.propDep,
+            function (env, scope) {
+              return scope.def(env.shared.vao + '.currentVAO?' + env.shared.vao + '.currentVAO.offset:0')
+            })
+        }
+      } else if (vaoActive) {
+        return new Declaration(
+          vao.thisDep,
+          vao.contextDep,
+          vao.propDep,
+          function (env, scope) {
+            return scope.def(env.shared.vao + '.currentVAO?' + env.shared.vao + '.currentVAO.instances:-1')
+          })
       }
       return null
     }
@@ -6957,6 +7164,7 @@ function reglCore (
     function parseVertCount () {
       if (S_COUNT in staticOptions) {
         var count = staticOptions[S_COUNT] | 0;
+        staticDraw.count = count;
         check$1.command(
           typeof count === 'number' && count >= 0, 'invalid vertex count', env.commandStr);
         return createStaticDecl(function () {
@@ -6975,7 +7183,7 @@ function reglCore (
           });
           return result
         })
-      } else if (elements) {
+      } else if (elementsActive) {
         if (isStatic(elements)) {
           if (elements) {
             if (OFFSET) {
@@ -7027,16 +7235,36 @@ function reglCore (
           });
           return variable
         }
+      } else if (vaoActive) {
+        var countVariable = new Declaration(
+          vao.thisDep,
+          vao.contextDep,
+          vao.propDep,
+          function (env, scope) {
+            return scope.def(env.shared.vao, '.currentVAO?', env.shared.vao, '.currentVAO.count:-1')
+          });
+        return countVariable
       }
       return null
     }
 
+    var primitive = parsePrimitive();
+    var count = parseVertCount();
+    var instances = parseParam(S_INSTANCES, false);
+
     return {
       elements: elements,
-      primitive: parsePrimitive(),
-      count: parseVertCount(),
-      instances: parseParam(S_INSTANCES, false),
-      offset: OFFSET
+      primitive: primitive,
+      count: count,
+      instances: instances,
+      offset: OFFSET,
+      vao: vao,
+
+      vaoActive: vaoActive,
+      elementsActive: elementsActive,
+
+      // static draw props
+      static: staticDraw
     }
   }
 
@@ -7652,14 +7880,14 @@ function reglCore (
             }
 
             var divisor = value.divisor | 0;
-            if ('divisor' in value) {
-              check$1.command(divisor === 0 || extInstancing,
-                'cannot specify divisor for attribute "' + attribute + '", instancing not supported', env.commandStr);
-              check$1.command(divisor >= 0,
-                'invalid divisor for attribute "' + attribute + '"', env.commandStr);
-            }
-
             check$1.optional(function () {
+              if ('divisor' in value) {
+                check$1.command(divisor === 0 || extInstancing,
+                  'cannot specify divisor for attribute "' + attribute + '", instancing not supported', env.commandStr);
+                check$1.command(divisor >= 0,
+                  'invalid divisor for attribute "' + attribute + '"', env.commandStr);
+              }
+
               var command = env.commandStr;
 
               var VALID_KEYS = [
@@ -7807,27 +8035,6 @@ function reglCore (
     return attributeDefs
   }
 
-  function parseVAO (options, env) {
-    var staticOptions = options.static;
-    var dynamicOptions = options.dynamic;
-    if (S_VAO in staticOptions) {
-      var vao = staticOptions[S_VAO];
-      if (vao !== null && attributeState.getVAO(vao) === null) {
-        vao = attributeState.createVAO(vao);
-      }
-      return createStaticDecl(function (env) {
-        return env.link(attributeState.getVAO(vao))
-      })
-    } else if (S_VAO in dynamicOptions) {
-      var dyn = dynamicOptions[S_VAO];
-      return createDynamicDecl(dyn, function (env, scope) {
-        var vaoRef = env.invoke(scope, dyn);
-        return scope.def(env.shared.vao + '.getVAO(' + vaoRef + ')')
-      })
-    }
-    return null
-  }
-
   function parseContext (context) {
     var staticContext = context.static;
     var dynamicContext = context.dynamic;
@@ -7918,9 +8125,13 @@ function reglCore (
 
     result.profile = parseProfile(options);
     result.uniforms = parseUniforms(uniforms, env);
-    result.drawVAO = result.scopeVAO = parseVAO(options);
+    result.drawVAO = result.scopeVAO = draw.vao;
     // special case: check if we can statically allocate a vertex array object for this program
-    if (!result.drawVAO && shader.program && !attribLocations && extensions.angle_instanced_arrays) {
+    if (!result.drawVAO &&
+      shader.program &&
+      !attribLocations &&
+      extensions.angle_instanced_arrays &&
+      draw.static.elements) {
       var useVAO = true;
       var staticBindings = shader.program.attributes.map(function (attr) {
         var binding = attributes.static[attr];
@@ -7928,7 +8139,10 @@ function reglCore (
         return binding
       });
       if (useVAO && staticBindings.length > 0) {
-        var vao = attributeState.getVAO(attributeState.createVAO(staticBindings));
+        var vao = attributeState.getVAO(attributeState.createVAO({
+          attributes: staticBindings,
+          elements: draw.static.elements
+        }));
         result.drawVAO = new Declaration(null, null, null, function (env, scope) {
           return env.link(vao)
         });
@@ -8348,16 +8562,29 @@ function reglCore (
     });
   }
 
-  function emitUniforms (env, scope, args, uniforms, filter) {
+  function emitUniforms (env, scope, args, uniforms, filter, isBatchInnerLoop) {
     var shared = env.shared;
     var GL = shared.gl;
 
+    var definedArrUniforms = {};
     var infix;
     for (var i = 0; i < uniforms.length; ++i) {
       var uniform = uniforms[i];
       var name = uniform.name;
       var type = uniform.info.type;
+      var size = uniform.info.size;
       var arg = args.uniforms[name];
+      if (size > 1) {
+        // either foo[n] or foos, avoid define both
+        if (!arg) {
+          continue
+        }
+        var arrUniformName = name.replace('[0]', '');
+        if (definedArrUniforms[arrUniformName]) {
+          continue
+        }
+        definedArrUniforms[arrUniformName] = 1;
+      }
       var UNIFORM = env.link(uniform);
       var LOCATION = UNIFORM + '.location';
 
@@ -8411,74 +8638,99 @@ function reglCore (
           } else {
             switch (type) {
               case GL_FLOAT$8:
-                check$1.commandType(value, 'number', 'uniform ' + name, env.commandStr);
+                if (size === 1) {
+                  check$1.commandType(value, 'number', 'uniform ' + name, env.commandStr);
+                } else {
+                  check$1.command(
+                    isArrayLike(value) && (value.length === size),
+                    'uniform ' + name, env.commandStr);
+                }
                 infix = '1f';
                 break
               case GL_FLOAT_VEC2:
                 check$1.command(
-                  isArrayLike(value) && value.length === 2,
+                  isArrayLike(value) && (value.length && value.length % 2 === 0 && value.length <= size * 2),
                   'uniform ' + name, env.commandStr);
                 infix = '2f';
                 break
               case GL_FLOAT_VEC3:
                 check$1.command(
-                  isArrayLike(value) && value.length === 3,
+                  isArrayLike(value) && (value.length && value.length % 3 === 0 && value.length <= size * 3),
                   'uniform ' + name, env.commandStr);
                 infix = '3f';
                 break
               case GL_FLOAT_VEC4:
                 check$1.command(
-                  isArrayLike(value) && value.length === 4,
+                  isArrayLike(value) && (value.length && value.length % 4 === 0 && value.length <= size * 4),
                   'uniform ' + name, env.commandStr);
                 infix = '4f';
                 break
               case GL_BOOL:
-                check$1.commandType(value, 'boolean', 'uniform ' + name, env.commandStr);
+                if (size === 1) {
+                  check$1.commandType(value, 'boolean', 'uniform ' + name, env.commandStr);
+                } else {
+                  check$1.command(
+                    isArrayLike(value) && (value.length === size),
+                    'uniform ' + name, env.commandStr);
+                }
                 infix = '1i';
                 break
               case GL_INT$3:
-                check$1.commandType(value, 'number', 'uniform ' + name, env.commandStr);
+                if (size === 1) {
+                  check$1.commandType(value, 'number', 'uniform ' + name, env.commandStr);
+                } else {
+                  check$1.command(
+                    isArrayLike(value) && (value.length === size),
+                    'uniform ' + name, env.commandStr);
+                }
                 infix = '1i';
                 break
               case GL_BOOL_VEC2:
                 check$1.command(
-                  isArrayLike(value) && value.length === 2,
+                  isArrayLike(value) && (value.length && value.length % 2 === 0 && value.length <= size * 2),
                   'uniform ' + name, env.commandStr);
                 infix = '2i';
                 break
               case GL_INT_VEC2:
                 check$1.command(
-                  isArrayLike(value) && value.length === 2,
+                  isArrayLike(value) && (value.length && value.length % 2 === 0 && value.length <= size * 2),
                   'uniform ' + name, env.commandStr);
                 infix = '2i';
                 break
               case GL_BOOL_VEC3:
                 check$1.command(
-                  isArrayLike(value) && value.length === 3,
+                  isArrayLike(value) && (value.length && value.length % 3 === 0 && value.length <= size * 3),
                   'uniform ' + name, env.commandStr);
                 infix = '3i';
                 break
               case GL_INT_VEC3:
                 check$1.command(
-                  isArrayLike(value) && value.length === 3,
+                  isArrayLike(value) && (value.length && value.length % 3 === 0 && value.length <= size * 3),
                   'uniform ' + name, env.commandStr);
                 infix = '3i';
                 break
               case GL_BOOL_VEC4:
                 check$1.command(
-                  isArrayLike(value) && value.length === 4,
+                  isArrayLike(value) && (value.length && value.length % 4 === 0 && value.length <= size * 4),
                   'uniform ' + name, env.commandStr);
                 infix = '4i';
                 break
               case GL_INT_VEC4:
                 check$1.command(
-                  isArrayLike(value) && value.length === 4,
+                  isArrayLike(value) && (value.length && value.length % 4 === 0 && value.length <= size * 4),
                   'uniform ' + name, env.commandStr);
                 infix = '4i';
                 break
             }
+            if (size > 1) {
+              infix += 'v';
+              value = env.global.def('[' +
+              Array.prototype.slice.call(value) + ']');
+            } else {
+              value = isArrayLike(value) ? Array.prototype.slice.call(value) : value;
+            }
             scope(GL, '.uniform', infix, '(', LOCATION, ',',
-              isArrayLike(value) ? Array.prototype.slice.call(value) : value,
+              value,
               ');');
           }
           continue
@@ -8513,20 +8765,24 @@ function reglCore (
             'bad data or missing for uniform "' + name + '".  ' + message);
         }
 
-        function checkType (type) {
-          check$1(!Array.isArray(VALUE), 'must not specify an array type for uniform');
+        function checkType (type, size) {
+          if (size === 1) {
+            check$1(!Array.isArray(VALUE), 'must not specify an array type for uniform');
+          }
           emitCheck(
-            'typeof ' + VALUE + '==="' + type + '"',
+            'Array.isArray(' + VALUE + ') && typeof ' + VALUE + '[0]===" ' + type + '"' +
+            ' || typeof ' + VALUE + '==="' + type + '"',
             'invalid type, expected ' + type);
         }
 
-        function checkVector (n, type) {
+        function checkVector (n, type, size) {
           if (Array.isArray(VALUE)) {
-            check$1(VALUE.length === n, 'must have length ' + n);
+            check$1(VALUE.length && VALUE.length % n === 0 && VALUE.length <= n * size, 'must have length of ' + (size === 1 ? '' : 'n * ') + n);
           } else {
             emitCheck(
-              shared.isArrayLike + '(' + VALUE + ')&&' + VALUE + '.length===' + n,
-              'invalid vector, should have length ' + n, env.commandStr);
+              shared.isArrayLike + '(' + VALUE + ')&&' + VALUE + '.length && ' + VALUE + '.length % ' + n + ' === 0' +
+              ' && ' + VALUE + '.length<=' + n * size,
+              'invalid vector, should have length of ' + (size === 1 ? '' : 'n * ') + n, env.commandStr);
           }
         }
 
@@ -8541,49 +8797,49 @@ function reglCore (
 
         switch (type) {
           case GL_INT$3:
-            checkType('number');
+            checkType('number', size);
             break
           case GL_INT_VEC2:
-            checkVector(2);
+            checkVector(2, 'number', size);
             break
           case GL_INT_VEC3:
-            checkVector(3);
+            checkVector(3, 'number', size);
             break
           case GL_INT_VEC4:
-            checkVector(4);
+            checkVector(4, 'number', size);
             break
           case GL_FLOAT$8:
-            checkType('number');
+            checkType('number', size);
             break
           case GL_FLOAT_VEC2:
-            checkVector(2);
+            checkVector(2, 'number', size);
             break
           case GL_FLOAT_VEC3:
-            checkVector(3);
+            checkVector(3, 'number', size);
             break
           case GL_FLOAT_VEC4:
-            checkVector(4);
+            checkVector(4, 'number', size);
             break
           case GL_BOOL:
-            checkType('boolean');
+            checkType('boolean', size);
             break
           case GL_BOOL_VEC2:
-            checkVector(2);
+            checkVector(2, 'boolean', size);
             break
           case GL_BOOL_VEC3:
-            checkVector(3);
+            checkVector(3, 'boolean', size);
             break
           case GL_BOOL_VEC4:
-            checkVector(4);
+            checkVector(4, 'boolean', size);
             break
           case GL_FLOAT_MAT2:
-            checkVector(4);
+            checkVector(4, 'number', size);
             break
           case GL_FLOAT_MAT3:
-            checkVector(9);
+            checkVector(9, 'number', size);
             break
           case GL_FLOAT_MAT4:
-            checkVector(16);
+            checkVector(16, 'number', size);
             break
           case GL_SAMPLER_2D:
             checkTexture(GL_TEXTURE_2D$3);
@@ -8658,8 +8914,13 @@ function reglCore (
           break
       }
 
-      scope(GL, '.uniform', infix, '(', LOCATION, ',');
+      if (infix.indexOf('Matrix') === -1 && size > 1) {
+        infix += 'v';
+        unroll = 1;
+      }
+
       if (infix.charAt(0) === 'M') {
+        scope(GL, '.uniform', infix, '(', LOCATION, ',');
         var matSize = Math.pow(type - GL_FLOAT_MAT2 + 2, 2);
         var STORAGE = env.global.def('new Float32Array(', matSize, ')');
         if (Array.isArray(VALUE)) {
@@ -8675,15 +8936,43 @@ function reglCore (
               return STORAGE + '[' + i + ']=' + VALUE + '[' + i + ']'
             }), ',', STORAGE, ')');
         }
+        scope(');');
       } else if (unroll > 1) {
-        scope(loop(unroll, function (i) {
-          return Array.isArray(VALUE) ? VALUE[i] : VALUE + '[' + i + ']'
-        }));
+        var prev = [];
+        var cur = [];
+        for (var j = 0; j < unroll; ++j) {
+          if (Array.isArray(VALUE)) {
+            cur.push(VALUE[j]);
+          } else {
+            cur.push(scope.def(VALUE + '[' + j + ']'));
+          }
+          if (isBatchInnerLoop) {
+            prev.push(scope.def());
+          }
+        }
+        if (isBatchInnerLoop) {
+          scope('if(!', env.batchId, '||', prev.map(function (p, i) {
+            return p + '!==' + cur[i]
+          }).join('||'), '){', prev.map(function (p, i) {
+            return p + '=' + cur[i] + ';'
+          }).join(''));
+        }
+        scope(GL, '.uniform', infix, '(', LOCATION, ',', cur.join(','), ');');
+        if (isBatchInnerLoop) {
+          scope('}');
+        }
       } else {
         check$1(!Array.isArray(VALUE), 'uniform value must not be an array');
-        scope(VALUE);
+        if (isBatchInnerLoop) {
+          var prevS = scope.def();
+          scope('if(!', env.batchId, '||', prevS, '!==', VALUE, '){',
+            prevS, '=', VALUE, ';');
+        }
+        scope(GL, '.uniform', infix, '(', LOCATION, ',', VALUE, ');');
+        if (isBatchInnerLoop) {
+          scope('}');
+        }
       }
-      scope(');');
     }
   }
 
@@ -8703,13 +8992,21 @@ function reglCore (
           scope = inner;
         }
         ELEMENTS = defn.append(env, scope);
+        if (drawOptions.elementsActive) {
+          scope(
+            'if(' + ELEMENTS + ')' +
+            GL + '.bindBuffer(' + GL_ELEMENT_ARRAY_BUFFER$2 + ',' + ELEMENTS + '.buffer.buffer);');
+        }
       } else {
-        ELEMENTS = scope.def(DRAW_STATE, '.', S_ELEMENTS);
-      }
-      if (ELEMENTS) {
+        ELEMENTS = scope.def();
         scope(
-          'if(' + ELEMENTS + ')' +
-          GL + '.bindBuffer(' + GL_ELEMENT_ARRAY_BUFFER$1 + ',' + ELEMENTS + '.buffer.buffer);');
+          ELEMENTS, '=', DRAW_STATE, '.', S_ELEMENTS, ';',
+          'if(', ELEMENTS, '){',
+          GL, '.bindBuffer(', GL_ELEMENT_ARRAY_BUFFER$2, ',', ELEMENTS, '.buffer.buffer);}',
+          'else if(', shared.vao, '.currentVAO){',
+          ELEMENTS, '=', env.shared.elements + '.getElements(' + shared.vao, '.currentVAO.elements);',
+          (!extVertexArrays ? 'if(' + ELEMENTS + ')' + GL + '.bindBuffer(' + GL_ELEMENT_ARRAY_BUFFER$2 + ',' + ELEMENTS + '.buffer.buffer);' : ''),
+          '}');
       }
       return ELEMENTS
     }
@@ -8775,7 +9072,7 @@ function reglCore (
 
     var ELEMENT_TYPE = ELEMENTS + '.type';
 
-    var elementsStatic = drawOptions.elements && isStatic(drawOptions.elements);
+    var elementsStatic = drawOptions.elements && isStatic(drawOptions.elements) && !drawOptions.vaoActive;
 
     function emitInstancing () {
       function drawElements () {
@@ -8793,7 +9090,7 @@ function reglCore (
           [PRIMITIVE, OFFSET, COUNT, INSTANCES], ');');
       }
 
-      if (ELEMENTS) {
+      if (ELEMENTS && ELEMENTS !== 'null') {
         if (!elementsStatic) {
           inner('if(', ELEMENTS, '){');
           drawElements();
@@ -8822,7 +9119,7 @@ function reglCore (
         inner(GL + '.drawArrays(' + [PRIMITIVE, OFFSET, COUNT] + ');');
       }
 
-      if (ELEMENTS) {
+      if (ELEMENTS && ELEMENTS !== 'null') {
         if (!elementsStatic) {
           inner('if(', ELEMENTS, '){');
           drawElements();
@@ -8888,7 +9185,7 @@ function reglCore (
     }
     emitUniforms(env, draw, args, program.uniforms, function () {
       return true
-    });
+    }, false);
     emitDraw(env, draw, draw, args);
   }
 
@@ -8929,6 +9226,9 @@ function reglCore (
     if (Object.keys(args.state).length > 0) {
       draw(env.shared.current, '.dirty=true;');
     }
+    if (env.shared.vao) {
+      draw(env.shared.vao, '.setVAO(null);');
+    }
   }
 
   // ===================================================
@@ -8947,7 +9247,7 @@ function reglCore (
     }
 
     emitAttributes(env, scope, args, program.attributes, all);
-    emitUniforms(env, scope, args, program.uniforms, all);
+    emitUniforms(env, scope, args, program.uniforms, all, false);
     emitDraw(env, scope, scope, args);
   }
 
@@ -9027,8 +9327,8 @@ function reglCore (
         emitAttributes(env, outer, args, program.attributes, isOuterDefn);
         emitAttributes(env, inner, args, program.attributes, isInnerDefn);
       }
-      emitUniforms(env, outer, args, program.uniforms, isOuterDefn);
-      emitUniforms(env, inner, args, program.uniforms, isInnerDefn);
+      emitUniforms(env, outer, args, program.uniforms, isOuterDefn, false);
+      emitUniforms(env, inner, args, program.uniforms, isInnerDefn, true);
       emitDraw(env, outer, inner, args);
     }
   }
@@ -9126,6 +9426,10 @@ function reglCore (
 
     if (Object.keys(args.state).length > 0) {
       batch(env.shared.current, '.dirty=true;');
+    }
+
+    if (env.shared.vao) {
+      batch(env.shared.vao, '.setVAO(null);');
     }
   }
 
@@ -9673,16 +9977,18 @@ function wrapREGL (args) {
     stats$$1,
     config,
     destroyBuffer);
+  var elementState = wrapElementsState(gl, extensions, bufferState, stats$$1);
   var attributeState = wrapAttributeState(
     gl,
     extensions,
     limits,
     stats$$1,
-    bufferState);
+    bufferState,
+    elementState,
+    drawState);
   function destroyBuffer (buffer) {
     return attributeState.destroyBuffer(buffer)
   }
-  var elementState = wrapElementsState(gl, extensions, bufferState, stats$$1);
   var shaderState = wrapShaderState(gl, stringStore, stats$$1, config);
   var textureState = createTextureSet(
     gl,
@@ -9840,10 +10146,10 @@ function wrapREGL (args) {
     shaderState.clear();
     framebufferState.clear();
     renderbufferState.clear();
+    attributeState.clear();
     textureState.clear();
     elementState.clear();
     bufferState.clear();
-    attributeState.clear();
 
     if (timer) {
       timer.clear();
